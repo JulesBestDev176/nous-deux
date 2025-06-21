@@ -190,7 +190,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser }: {
       <div className="mb-3">
         <h3 className="font-medium text-gray-800 mb-2">{question.texte}</h3>
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Créée le {new Date(question.dateCreation).toLocaleDateString()}</span>
+          <span>Créée le {question.dateCreation ? new Date(question.dateCreation).toLocaleDateString() : ''}</span>
           <span className={`px-2 py-1 rounded-full ${
             isCreator ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
           }`}>
@@ -446,7 +446,8 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         }
       } catch (error) {
         // Vérifier si c'est une erreur d'authentification
-        if (error.response && error.response.status === 401) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (typeof error === 'object' && error && 'response' in error && (error as any).response.status === 401) {
           toast({
             title: "Session expirée",
             description: "Votre session a expiré. Veuillez vous reconnecter.",

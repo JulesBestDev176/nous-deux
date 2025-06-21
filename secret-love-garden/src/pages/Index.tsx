@@ -8,7 +8,14 @@ import Dashboard from "@/components/Dashboard";
 import authService from "@/services/auth.service";
 import { useToast } from "@/components/ui/use-toast";
 
-const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }) => {
+interface IndexProps {
+  isAuthenticated: boolean;
+  currentUser: any;
+  onLogin: (user: any) => void;
+  onLogout: () => void;
+}
+
+const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }: IndexProps) => {
   const [accessCode, setAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -49,7 +56,7 @@ const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }) => {
 
   // Vérifier si l'utilisateur est authentifié et a un nom
   const isUserAuthenticated = isAuthenticated && currentUser && (currentUser.nom || currentUser.name);
-  const userName = currentUser?.nom || currentUser?.name;
+  const userName = currentUser?.nom || currentUser?.name || '';
 
   console.log("Index - Condition d'authentification:", {
     isAuthenticated,
@@ -59,7 +66,7 @@ const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }) => {
     userName
   });
 
-  if (isUserAuthenticated) {
+  if (isUserAuthenticated && userName) {
     console.log("Index - Affichage du Dashboard pour:", userName);
     return (
       <Dashboard

@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Ne PAS doubler le chemin "auth" si déjà présent dans VITE_API_URL
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Configuration de l'URL de base - utiliser l'URL de production si disponible
+const BASE_URL = import.meta.env.VITE_API_URL || 
+                 (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://nous-deux-backend.onrender.com');
 
 // Intercepteur pour gérer automatiquement les erreurs d'authentification
 axios.interceptors.response.use(

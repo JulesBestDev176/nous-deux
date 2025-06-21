@@ -15,11 +15,23 @@ import { RingLoader } from "react-spinners";
 
 const queryClient = new QueryClient();
 
+// Interface pour l'utilisateur
+interface User {
+  _id: string;
+  nom: string;
+  email?: string;
+}
+
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const [error, setError] = useState<string | null>(null);
+  
+  // Configuration API - utiliser l'URL de production si disponible
+  const API_URL = import.meta.env.VITE_API_URL || 
+                  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://nous-deux-backend.onrender.com');
   
   useEffect(() => {
     const initialiserSession = async () => {
@@ -32,7 +44,6 @@ const App = () => {
           // Si on a des données locales, on les utilise immédiatement
           setCurrentUser(savedUser);
           setIsAuthenticated(true);
-          console.log("Session restaurée depuis le localStorage:", savedUser.nom);
         }
         
         // 2. Vérifier la session avec le serveur (en arrière-plan)
@@ -42,10 +53,8 @@ const App = () => {
             // Mettre à jour avec les données du serveur si elles sont plus récentes
             setCurrentUser(sessionData.user);
             setIsAuthenticated(true);
-            console.log("Session vérifiée avec le serveur:", sessionData.user.nom);
           }
         } catch (serverError) {
-          console.log("Erreur serveur, utilisation des données locales:", serverError.message);
           // En cas d'erreur serveur, on garde les données locales
           if (!savedUser) {
             // Seulement déconnecter si on n'a pas de données locales
@@ -54,10 +63,10 @@ const App = () => {
           }
         }
       } catch (error) {
-        console.error("Erreur lors de l'initialisation de la session:", error);
         // En cas d'erreur générale, on déconnecte
         setIsAuthenticated(false);
         setCurrentUser(null);
+        setError("Erreur lors de l'initialisation de la session");
       } finally {
         setIsLoading(false);
       }
@@ -66,18 +75,18 @@ const App = () => {
     initialiserSession();
   }, []);
 
-  const handleLogin = (user) => {
-    console.log("Connexion réussie:", user.nom);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLogin = (user: any) => {
     setIsAuthenticated(true);
     setCurrentUser(user);
+    setError(null);
   };
 
   const handleLogout = async () => {
     try {
       await authService.deconnexion();
-      console.log("Déconnexion réussie");
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      // Erreur silencieuse lors de la déconnexion
     } finally {
       // Toujours nettoyer le localStorage
       localStorage.removeItem("token");
@@ -91,6 +100,23 @@ const App = () => {
     return (
       <div className="flex justify-center items-center h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-red-50">
         <RingLoader color="#f472b6" size={80} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-red-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de connexion</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
+          >
+            Recharger la page
+          </button>
+        </div>
       </div>
     );
   }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-const DebugUser = ({ currentUser, isAuthenticated }) => {
-  const [debugInfo, setDebugInfo] = useState({});
+const DebugUser = ({ currentUser, isAuthenticated }: { currentUser: any, isAuthenticated: boolean }) => {
+  const [debugInfo, setDebugInfo] = useState<any>({});
 
   useEffect(() => {
     const info = {
