@@ -335,7 +335,10 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
       // === DEBUT DE LA NOUVELLE LOGIQUE DE POPULATION ===
       {
         // Étape 4: Déconstruire le tableau des réponses pour traiter chaque réponse
-        $unwind: '$reponses'
+        $unwind: {
+          path: '$reponses',
+          preserveNullAndEmptyArrays: true
+        }
       },
       {
         // Étape 5: "Populer" l'utilisateur de chaque réponse

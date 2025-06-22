@@ -120,23 +120,25 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       // Organiser les données par question avec les réponses de chaque partenaire
       const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }) => {
-        console.log('🔍 Traitement question:', {
-          questionId: item.question._id,
-          questionTexte: item.question.texte.substring(0, 50) + '...',
-          nombreReponses: item.reponses?.length || 0,
-          reponses: item.reponses?.map((r: Reponse) => ({
-            utilisateurId: r.utilisateur._id,
-            utilisateurNom: r.utilisateur.nom,
-            estMoi: r.utilisateur._id === monId,
-            estPartenaire: r.utilisateur._id === partenaire?._id
-          }))
+        console.log(`\n🔍 --- TRAITEMENT QUESTION: "${item.question.texte.substring(0, 40)}..." ---`);
+        console.log('IDs de comparaison -> Moi:', monId, '| Partenaire:', partenaire?._id);
+
+        item.reponses?.forEach((r: Reponse, index: number) => {
+          console.log(`  Réponse ${index + 1}:`, {
+            auteurID: r.utilisateur?._id,
+            auteurNom: r.utilisateur?.nom,
+            typeOfAuteurID: typeof r.utilisateur?._id,
+            estMoi: r.utilisateur?._id === monId,
+            estPartenaire: r.utilisateur?._id === partenaire?._id,
+            texte: r.texte.substring(0, 30) + '...'
+          });
         });
 
         // Trouver ma réponse et celle de mon partenaire par ID (plus fiable que le nom)
         const maReponse = item.reponses?.find((r: Reponse) => r.utilisateur._id === monId);
         const reponsePartenaire = item.reponses?.find((r: Reponse) => r.utilisateur._id === partenaire?._id);
 
-        console.log('📝 Réponses trouvées:', {
+        console.log('📝 Résultat après recherche:', {
           questionId: item.question._id,
           aiMaReponse: !!maReponse,
           aReponsePartenaire: !!reponsePartenaire,
