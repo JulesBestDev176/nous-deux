@@ -2,7 +2,7 @@ import React from 'react';
 import { useIsIOS } from '@/hooks/useIsIOS';
 import PWAInstall from './PWAInstall'; // Ton bouton d'installation actuel
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpFromSquare } from 'lucide-react';
+import { SquareArrowUp } from 'lucide-react';
 
 const PWAInstallPrompt = () => {
   const isIOS = useIsIOS();
@@ -20,7 +20,7 @@ const PWAInstallPrompt = () => {
         <CardContent className="text-blue-700 text-sm">
           <p>Pour installer l'application sur votre iPhone :</p>
           <ol className="list-decimal list-inside mt-2 space-y-1">
-            <li>Appuyez sur l'icône de Partage <ArrowUpFromSquare className="inline-block w-4 h-4 mx-1" /> dans la barre d'outils.</li>
+            <li>Appuyez sur l'icône de Partage <SquareArrowUp className="inline-block w-4 h-4 mx-1" /> dans la barre d'outils.</li>
             <li>Faites défiler et sélectionnez "Sur l'écran d'accueil".</li>
             <li>Appuyez sur "Ajouter".</li>
           </ol>

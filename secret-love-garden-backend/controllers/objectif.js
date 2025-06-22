@@ -7,7 +7,7 @@ exports.creerObjectif = async (req, res) => {
   try {
     const { titre, description, categorie, priorite, dateObjectif } = req.body;
 
-    // Trouver le partenaire
+    
     const partenaire = await Utilisateur.findOne({ 
       _id: { $ne: req.utilisateur.id } 
     });
