@@ -25,7 +25,11 @@ const io = new Server(httpServer, {
 
 // Middlewares globaux
 app.use(cors({
-  origin: ['http://localhost:8081', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:8081',
+    'http://localhost:3000',
+    'https://nous-deux-frontend.onrender.com',
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
