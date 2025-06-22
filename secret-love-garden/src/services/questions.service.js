@@ -77,13 +77,27 @@ const getQuestionsPersonnalisees = async () => {
 const getReponsesPartenaire = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/questions/reponses-partenaire`, {
+    const response = await axios.get(`${API_URL}/api/questions/reponses-partenaire`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
   } catch (error) {
     console.error('Erreur lors de la récupération des réponses du partenaire:', error);
     throw error.response.data;
+  }
+};
+
+// Nouvelle méthode pour récupérer les questions avec les réponses du couple
+const getQuestionsAvecReponsesCouple = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/questions/couple-responses`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des réponses du couple:', error);
+    throw error.response?.data || error;
   }
 };
 
@@ -94,5 +108,6 @@ export default {
   getReponseUtilisateur,
   getReponsesUtilisateur,
   getQuestionsPersonnalisees,
-  getReponsesPartenaire
+  getReponsesPartenaire,
+  getQuestionsAvecReponsesCouple  // ← Nouvelle méthode ajoutée
 };

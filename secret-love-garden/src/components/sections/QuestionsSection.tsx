@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, Send, Heart, Calendar, User, Loader2, CheckCircle, Clock, BookOpen, Lightbulb } from "lucide-react";
+import { MessageCircle, Send, Heart, Calendar, User, Loader2, CheckCircle, Clock, BookOpen, Lightbulb, Users, Eye, EyeOff } from "lucide-react";
 import questionService from "@/services/questions.service";
 
 interface QuestionsSectionProps {
@@ -35,20 +35,31 @@ interface Reponse {
   question: Question;
   texte: string;
   dateReponse: string;
+  utilisateur: {
+    _id: string;
+    nom: string;
+  };
+}
+
+interface QuestionAvecReponses {
+  question: Question;
+  maReponse?: Reponse;
+  reponsePartenaire?: Reponse;
 }
 
 const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: QuestionsSectionProps) => {
   const [questionDuJour, setQuestionDuJour] = useState<Question | null>(null);
   const [reponseUtilisateur, setReponseUtilisateur] = useState<string>("");
-  const [mesReponses, setMesReponses] = useState<Reponse[]>([]);
+  const [questionsAvecReponses, setQuestionsAvecReponses] = useState<QuestionAvecReponses[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [reponseExistante, setReponseExistante] = useState<string>("");
   const [activeTab, setActiveTab] = useState<'question' | 'historique'>('question');
+  const [reponsesVisibles, setReponsesVisibles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadQuestionDuJour();
-    loadMesReponses();
+    loadQuestionsAvecReponses();
   }, []);
 
   const loadQuestionDuJour = async () => {
@@ -79,16 +90,37 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     }
   };
 
-  const loadMesReponses = async () => {
+  const loadQuestionsAvecReponses = async () => {
     try {
-      // On récupère l'ID utilisateur depuis le localStorage ou un store
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user.id) {
-        const response = await questionService.getReponsesUtilisateur(user.id);
-        setMesReponses(response.data || []);
-      }
+      // Récupérer toutes les questions qui ont au moins une réponse du couple
+      const response = await questionService.getQuestionsAvecReponsesCouple();
+      
+      // Organiser les données par question avec les réponses de chaque partenaire
+      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }) => ({
+        question: item.question,
+        maReponse: item.reponses.find((r: Reponse) => r.utilisateur.nom === currentUser),
+        reponsePartenaire: item.reponses.find((r: Reponse) => r.utilisateur.nom !== currentUser)
+      }));
+      
+      setQuestionsAvecReponses(questionsOrganisees);
     } catch (error) {
-      console.error('Erreur lors du chargement des réponses:', error);
+      console.error('Erreur lors du chargement des réponses du couple:', error);
+      // Fallback: charger seulement mes réponses
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.id) {
+          const response = await questionService.getReponsesUtilisateur(user.id);
+          const mesReponses = response.data || [];
+          const questionsSimples = mesReponses.map((reponse: Reponse) => ({
+            question: reponse.question,
+            maReponse: reponse,
+            reponsePartenaire: undefined
+          }));
+          setQuestionsAvecReponses(questionsSimples);
+        }
+      } catch (fallbackError) {
+        console.error('Erreur lors du chargement des réponses:', fallbackError);
+      }
     }
   };
 
@@ -117,7 +149,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       setReponseExistante(reponseUtilisateur.trim());
       setReponseUtilisateur("");
-      loadMesReponses(); // Recharger l'historique
+      loadQuestionsAvecReponses(); // Recharger l'historique
       
     } catch (error) {
       console.error('Erreur lors de l\'envoi de la réponse:', error);
@@ -129,6 +161,18 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const toggleReponseVisibilite = (questionId: string) => {
+    setReponsesVisibles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -148,6 +192,20 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getStatutQuestion = (questionAvecReponses: QuestionAvecReponses) => {
+    const { maReponse, reponsePartenaire } = questionAvecReponses;
+    
+    if (maReponse && reponsePartenaire) {
+      return { statut: 'complete', couleur: 'green', texte: 'Vous avez tous les deux répondu' };
+    } else if (maReponse && !reponsePartenaire) {
+      return { statut: 'attente', couleur: 'orange', texte: `En attente de ${partenaire?.nom || 'votre partenaire'}` };
+    } else if (!maReponse && reponsePartenaire) {
+      return { statut: 'a_repondre', couleur: 'blue', texte: 'À votre tour de répondre' };
+    } else {
+      return { statut: 'vide', couleur: 'gray', texte: 'Aucune réponse' };
+    }
   };
 
   if (loading) {
@@ -176,8 +234,8 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold">{mesReponses.length}</p>
-              <p className="text-purple-100 text-sm">réponse{mesReponses.length > 1 ? 's' : ''}</p>
+              <p className="text-3xl font-bold">{questionsAvecReponses.length}</p>
+              <p className="text-purple-100 text-sm">question{questionsAvecReponses.length > 1 ? 's' : ''}</p>
             </div>
           </div>
         </CardHeader>
@@ -206,8 +264,8 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
           }`}
           onClick={() => setActiveTab('historique')}
         >
-          <BookOpen className="w-4 h-4 mr-2" />
-          Mes réponses
+          <Users className="w-4 h-4 mr-2" />
+          Nos réponses
         </Button>
       </div>
 
@@ -301,14 +359,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         </div>
       )}
 
-      {/* Historique des réponses */}
+      {/* Historique des réponses du couple */}
       {activeTab === 'historique' && (
         <div className="space-y-4">
-          {mesReponses.length === 0 ? (
+          {questionsAvecReponses.length === 0 ? (
             <Card className="border-pink-200">
               <CardContent className="p-12 text-center">
                 <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-10 h-10 text-pink-500" />
+                  <Users className="w-10 h-10 text-pink-500" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   Aucune réponse pour le moment
@@ -328,43 +386,112 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
           ) : (
             <>
               <div className="text-sm text-gray-600 mb-4">
-                {mesReponses.length} réponse{mesReponses.length > 1 ? 's' : ''} • Triées par date
+                {questionsAvecReponses.length} question{questionsAvecReponses.length > 1 ? 's' : ''} • Triées par date
               </div>
               
               <div className="space-y-4">
-                {mesReponses.map((reponse) => (
-                  <Card key={reponse._id} className="border-pink-100 hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="mb-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <h4 className="font-medium text-gray-900 pr-4 leading-relaxed">
-                            {reponse.question.texte}
-                          </h4>
-                          <div className="flex items-center text-sm text-gray-500 whitespace-nowrap">
-                            <Clock className="w-4 h-4 mr-1" />
-                            <span>{formatDateTime(reponse.dateReponse)}</span>
+                {questionsAvecReponses.map((questionAvecReponses) => {
+                  const { question, maReponse, reponsePartenaire } = questionAvecReponses;
+                  const statut = getStatutQuestion(questionAvecReponses);
+                  const sontVisibles = reponsesVisibles.has(question._id);
+                  
+                  return (
+                    <Card key={question._id} className="border-pink-100 hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="mb-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <h4 className="font-medium text-gray-900 pr-4 leading-relaxed flex-1">
+                              {question.texte}
+                            </h4>
+                            <div className="flex items-center space-x-2">
+                              <span className={`text-xs px-2 py-1 rounded-full bg-${statut.couleur}-100 text-${statut.couleur}-700`}>
+                                {statut.texte}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleReponseVisibilite(question._id)}
+                                className="p-2 h-8 w-8"
+                              >
+                                {sontVisibles ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
+                          
+                          {sontVisibles && (
+                            <div className={`space-y-4 ${isMobile ? '' : 'grid grid-cols-2 gap-4'}`}>
+                              {/* Ma réponse */}
+                              <div className="space-y-2">
+                                <div className="flex items-center text-sm font-medium text-gray-700">
+                                  <User className="w-4 h-4 mr-1" />
+                                  <span>Vous ({currentUser})</span>
+                                </div>
+                                {maReponse ? (
+                                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-300">
+                                    <p className="text-gray-700 leading-relaxed mb-2">
+                                      {maReponse.texte}
+                                    </p>
+                                    <div className="text-xs text-gray-500 flex items-center">
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      {formatDateTime(maReponse.dateReponse)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
+                                    <p className="text-gray-500 text-sm">Pas encore de réponse</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Réponse du partenaire */}
+                              <div className="space-y-2">
+                                <div className="flex items-center text-sm font-medium text-gray-700">
+                                  <Heart className="w-4 h-4 mr-1 text-pink-500" />
+                                  <span>{partenaire?.nom || 'Votre partenaire'}</span>
+                                </div>
+                                {reponsePartenaire ? (
+                                  <div className="bg-pink-50 p-4 rounded-lg border-l-4 border-pink-300">
+                                    <p className="text-gray-700 leading-relaxed mb-2">
+                                      {reponsePartenaire.texte}
+                                    </p>
+                                    <div className="text-xs text-gray-500 flex items-center">
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      {formatDateTime(reponsePartenaire.dateReponse)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
+                                    <p className="text-gray-500 text-sm">Pas encore de réponse</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
-                        <div className="bg-pink-50 p-4 rounded-lg border-l-4 border-pink-300">
-                          <p className="text-gray-700 leading-relaxed">
-                            {reponse.texte}
-                          </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
+                          <span className="capitalize bg-gray-100 px-2 py-1 rounded-full">
+                            {question.categorie}
+                          </span>
+                          <div className="flex items-center space-x-4">
+                            <span>
+                              {maReponse && reponsePartenaire ? '2/2 réponses' : 
+                               maReponse || reponsePartenaire ? '1/2 réponses' : '0/2 réponses'}
+                            </span>
+                            <div className="flex items-center">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              <span>{formatDate(question.dateCreation)}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span className="capitalize bg-gray-100 px-2 py-1 rounded-full">
-                          {reponse.question.categorie}
-                        </span>
-                        <div className="flex items-center">
-                          <Heart className="w-3 h-3 mr-1 text-pink-400" />
-                          <span>Répondu par vous</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}

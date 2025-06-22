@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, Heart, Calendar, User, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
+import { Camera, Upload, Heart, Calendar, User, Loader2, Image as ImageIcon, Plus, X, AlertCircle, ChevronLeft, ChevronRight, Download, Maximize2 } from "lucide-react";
 import gallerieService from "@/services/gallerie.service";
 
 interface Partenaire {
@@ -40,10 +39,52 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [legende, setLegende] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
+  
+  // États pour le lightbox
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     loadImages();
   }, []);
+
+  // Gestion des touches clavier pour la navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!lightboxOpen) return;
+      
+      switch (event.key) {
+        case 'Escape':
+          closeLightbox();
+          break;
+        case 'ArrowLeft':
+          goToPrevious();
+          break;
+        case 'ArrowRight':
+          goToNext();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, currentImageIndex]);
+
+  // Prévenir le scroll du body quand le lightbox est ouvert
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [lightboxOpen]);
 
   const loadImages = async () => {
     try {
@@ -60,6 +101,104 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction simplifiée pour l'URL des images
+  const getImageUrl = (imageUrl: string) => {
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    return imageUrl.startsWith('/') ? `${baseUrl}${imageUrl}` : `${baseUrl}/${imageUrl}`;
+  };
+
+  // Fonctions pour le lightbox
+  const openLightbox = (imageIndex: number) => {
+    setCurrentImageIndex(imageIndex);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const goToNext = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const goToPrevious = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  // Gestion du swipe pour mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      goToNext();
+    } else if (isRightSwipe) {
+      goToPrevious();
+    }
+  };
+
+  // Fonction pour télécharger une image
+  const downloadImage = async (imageUrl: string, imageName: string) => {
+    try {
+      const response = await fetch(getImageUrl(imageUrl));
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `souvenir-${imageName}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Image téléchargée !",
+        description: "L'image a été sauvegardée",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur de téléchargement",
+        description: "Impossible de télécharger l'image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImageError = (imageId: string, imageUrl: string) => {
+    console.error('Failed to load image:', imageUrl);
+    setImageLoadErrors(prev => new Set(prev).add(imageId));
+    
+    toast({
+      title: "Erreur de chargement",
+      description: "Impossible de charger l'image",
+      variant: "destructive",
+    });
+  };
+
+  const retryImageLoad = (imageId: string) => {
+    setImageLoadErrors(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(imageId);
+      return newSet;
+    });
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +224,6 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
 
       setSelectedFile(file);
       
-      // Créer une preview
       const reader = new FileReader();
       reader.onload = () => {
         setPreviewUrl(reader.result as string);
@@ -120,13 +258,11 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
         description: "Votre souvenir a été ajouté à la galerie 💕",
       });
 
-      // Reset du formulaire
       setSelectedFile(null);
       setLegende("");
       setPreviewUrl("");
       setShowUploadForm(false);
       
-      // Recharger les images
       loadImages();
       
     } catch (error) {
@@ -169,6 +305,8 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
       </div>
     );
   }
+
+  const currentImage = images[currentImageIndex];
 
   return (
     <div className="space-y-6">
@@ -230,7 +368,6 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Zone de drop */}
             <div className="space-y-4">
               <Label className="text-sm font-medium text-gray-700">
                 Choisir une image
@@ -280,7 +417,6 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
               )}
             </div>
 
-            {/* Légende */}
             <div className="space-y-2">
               <Label htmlFor="legende" className="text-sm font-medium text-gray-700">
                 Légende (optionnel)
@@ -295,7 +431,6 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
               />
             </div>
 
-            {/* Boutons */}
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={handleUpload}
@@ -344,16 +479,47 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
           </CardContent>
         </Card>
       ) : (
-        <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'}`}>
-          {images.map((image) => (
-            <Card key={image._id} className="overflow-hidden hover:shadow-lg transition-shadow border-pink-100">
-              <div className="aspect-square relative">
-                <img
-                  src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${image.url}`}
-                  alt={image.legende || "Souvenir"}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity">
+        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+          {images.map((image, index) => (
+            <Card key={image._id} className="overflow-hidden hover:shadow-lg transition-shadow border-pink-100 group cursor-pointer">
+              <div 
+                className="aspect-square relative"
+                onClick={() => openLightbox(index)}
+              >
+                {imageLoadErrors.has(image._id) ? (
+                  <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+                    <AlertCircle className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-gray-500 text-sm text-center mb-3">
+                      Impossible de charger l'image
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        retryImageLoad(image._id);
+                      }}
+                      className="text-xs"
+                    >
+                      Réessayer
+                    </Button>
+                  </div>
+                ) : (
+                  <img
+                    src={getImageUrl(image.url)}
+                    alt={image.legende || "Souvenir"}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    onError={() => handleImageError(image._id, image.url)}
+                    loading="lazy"
+                  />
+                )}
+                
+                {/* Overlay avec icône de zoom */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-4 left-4 right-4 text-white">
                     <div className="flex items-center text-sm space-x-2">
                       <User className="w-4 h-4" />
@@ -365,18 +531,118 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
               
               <CardContent className="p-4">
                 {image.legende && (
-                  <p className="text-gray-700 mb-3 line-clamp-2">
+                  <p className="text-gray-700 mb-3 line-clamp-2 text-sm">
                     {image.legende}
                   </p>
                 )}
                 
-                <div className="flex items-center text-sm text-gray-500">
-                  <Calendar className="w-4 h-4 mr-2" />
+                <div className="flex items-center text-xs text-gray-500">
+                  <Calendar className="w-3 h-3 mr-1" />
                   <span>{formatDate(image.dateCreation)}</span>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && currentImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Bouton de fermeture */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20 rounded-full p-2"
+          >
+            <X className="w-6 h-6" />
+          </Button>
+
+          {/* Compteur d'images */}
+          <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+            {currentImageIndex + 1} / {images.length}
+          </div>
+
+          {/* Navigation précédente */}
+          {images.length > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToPrevious();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 rounded-full p-3"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </Button>
+          )}
+
+          {/* Navigation suivante */}
+          {images.length > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToNext();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 rounded-full p-3"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </Button>
+          )}
+
+          {/* Bouton de téléchargement */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              downloadImage(currentImage.url, currentImage._id);
+            }}
+            className="absolute bottom-4 right-4 z-10 text-white hover:bg-white/20 rounded-full p-2"
+          >
+            <Download className="w-5 h-5" />
+          </Button>
+
+          {/* Image principale avec gestion du swipe */}
+          <div 
+            className="relative max-w-full max-h-full flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img
+              src={getImageUrl(currentImage.url)}
+              alt={currentImage.legende || "Souvenir"}
+              className="max-w-full max-h-full object-contain"
+            />
+            
+            {/* Informations de l'image */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+              {currentImage.legende && (
+                <p className="text-lg mb-2">
+                  {currentImage.legende}
+                </p>
+              )}
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>{currentImage.createur.nom}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(currentImage.dateCreation)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
