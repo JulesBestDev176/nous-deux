@@ -14,6 +14,10 @@ const utilisateurSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  partenaire: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Utilisateur'
+  },
   dateCreation: {
     type: Date,
     default: Date.now
