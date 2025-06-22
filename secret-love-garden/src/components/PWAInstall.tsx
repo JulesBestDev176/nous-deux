@@ -12,7 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
-const PWAInstall = () => {
+const PWAInstall = ({ onInstallStateChange }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const { toast } = useToast();
@@ -26,10 +26,15 @@ const PWAInstall = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
+    // Notifier le parent si le bouton peut être affiché ou non
+    if (onInstallStateChange) {
+      onInstallStateChange({ canInstall: !!deferredPrompt });
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
     };
-  }, []);
+  }, [onInstallStateChange]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;

@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const questionController = require('../controllers/questions');
 const { protegerRoutes } = require('../middlewares/auth');
-const Utilisateur = require('../models/utilisateur');
-const Reponse = require('../models/reponse');
+const Utilisateur = require('../models/Utilisateur');
+const Reponse = require('../models/Reponse');
 
 // @route   GET /api/questions/du-jour
 // @desc    Obtenir la question du jour

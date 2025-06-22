@@ -25,6 +25,7 @@ import JeuxSection from "./sections/JeuxSection";
 
 // Import des composants communs
 import Logo from "./Logo";
+import PWAInstallPrompt from "./PWAInstallPrompt";
 
 // Hook pour détecter mobile
 const MOBILE_BREAKPOINT = 768;
@@ -336,62 +337,67 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         </>
       )}
 
-      <div className="max-w-7xl mx-auto p-4 flex gap-6">
-        {/* Sidebar desktop sans scroll */}
-        {!isMobile && (
-          <aside className="w-72 h-fit bg-white rounded-2xl shadow-sm border border-pink-100 p-6">
-            <div className="space-y-6">
-              {menuCategories.map((category, categoryIndex) => (
-                <div key={categoryIndex}>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                    {category.title}
-                  </h3>
-                  <div className="space-y-1">
-                    {category.items.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Button
-                          key={item.id}
-                          variant={activeSection === item.id ? "default" : "ghost"}
-                          className={`w-full justify-start p-3 h-auto ${
-                            activeSection === item.id 
-                              ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md" 
-                              : "text-gray-700 hover:bg-pink-50"
-                          } rounded-xl transition-all duration-200`}
-                          onClick={() => setActiveSection(item.id)}
-                        >
-                          <Icon className="w-4 h-4 mr-3" />
-                          <span className="text-sm font-medium">{item.label}</span>
-                        </Button>
-                      );
-                    })}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="lg:flex lg:space-x-8">
+          {/* Sidebar desktop sans scroll */}
+          {!isMobile && (
+            <aside className="w-72 h-fit bg-white rounded-2xl shadow-sm border border-pink-100 p-6">
+              <div className="space-y-6">
+                {menuCategories.map((category, categoryIndex) => (
+                  <div key={categoryIndex}>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                      {category.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {category.items.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Button
+                            key={item.id}
+                            variant={activeSection === item.id ? "default" : "ghost"}
+                            className={`w-full justify-start p-3 h-auto ${
+                              activeSection === item.id 
+                                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md" 
+                                : "text-gray-700 hover:bg-pink-50"
+                            } rounded-xl transition-all duration-200`}
+                            onClick={() => setActiveSection(item.id)}
+                          >
+                            <Icon className="w-4 h-4 mr-3" />
+                            <span className="text-sm font-medium">{item.label}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
+                ))}
+                
+                {/* Settings séparé */}
+                <div className="pt-4 border-t border-gray-200">
+                  <Button
+                    variant={activeSection === "settings" ? "default" : "ghost"}
+                    className={`w-full justify-start p-3 h-auto ${
+                      activeSection === "settings" 
+                        ? "bg-gray-600 text-white" 
+                        : "text-gray-700 hover:bg-gray-50"
+                    } rounded-xl`}
+                    onClick={() => setActiveSection("settings")}
+                  >
+                    <Settings className="w-4 h-4 mr-3" />
+                    <span className="text-sm font-medium">Paramètres</span>
+                  </Button>
                 </div>
-              ))}
-              
-              {/* Settings séparé */}
-              <div className="pt-4 border-t border-gray-200">
-                <Button
-                  variant={activeSection === "settings" ? "default" : "ghost"}
-                  className={`w-full justify-start p-3 h-auto ${
-                    activeSection === "settings" 
-                      ? "bg-gray-600 text-white" 
-                      : "text-gray-700 hover:bg-gray-50"
-                  } rounded-xl`}
-                  onClick={() => setActiveSection("settings")}
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  <span className="text-sm font-medium">Paramètres</span>
-                </Button>
               </div>
-            </div>
-          </aside>
-        )}
+            </aside>
+          )}
 
-        {/* Contenu principal */}
-        <main className="flex-1 min-h-[calc(100vh-140px)]">
-          {renderSection()}
-        </main>
+          <main className="flex-1">
+            <div className="mb-6">
+              <PWAInstallPrompt />
+            </div>
+
+            {renderSection()}
+          </main>
+        </div>
       </div>
     </div>
   );
