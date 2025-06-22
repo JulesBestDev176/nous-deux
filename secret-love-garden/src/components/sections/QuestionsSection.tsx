@@ -54,14 +54,13 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
   const [submitting, setSubmitting] = useState(false);
   const [reponseExistante, setReponseExistante] = useState<string>("");
   const [activeTab, setActiveTab] = useState<'question' | 'historique'>('question');
-  const [reponsesVisibles, setReponsesVisibles] = useState<Set<string>>(new Set());
   const [currentUserId, setCurrentUserId] = useState<string>("");
 
   useEffect(() => {
     // Récupérer l'ID de l'utilisateur actuel
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.id) {
-      setCurrentUserId(user.id);
+    if (user._id) {
+      setCurrentUserId(user._id);
     }
     
     loadQuestionDuJour();
@@ -113,7 +112,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       // Récupérer l'ID de l'utilisateur actuel
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const monId = user.id;
+      const monId = user._id;
       
       console.log('👤 Mon ID utilisateur:', monId);
       console.log('👥 ID partenaire:', partenaire?._id);
@@ -163,8 +162,8 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       try {
         console.log('🔄 Tentative de fallback vers mes réponses uniquement...');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.id) {
-          const response = await questionService.getReponsesUtilisateur(user.id);
+        if (user._id) {
+          const response = await questionService.getReponsesUtilisateur(user._id);
           const mesReponses = response.data || [];
           const questionsSimples = mesReponses.map((reponse: Reponse) => ({
             question: reponse.question!,
@@ -226,18 +225,6 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const toggleReponseVisibilite = (questionId: string) => {
-    setReponsesVisibles(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionId)) {
-        newSet.delete(questionId);
-      } else {
-        newSet.add(questionId);
-      }
-      return newSet;
-    });
   };
 
   const formatDate = (dateString: string) => {
@@ -315,16 +302,16 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold mb-2">
+              <CardTitle className="text-xl sm:text-2xl font-bold mb-2">
                 💭 Questions couple
               </CardTitle>
-              <p className="text-purple-100">
+              <p className="text-purple-100 text-sm sm:text-base">
                 Apprenez à mieux vous connaître
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold">{questionsAvecReponses.length}</p>
-              <p className="text-purple-100 text-sm">question{questionsAvecReponses.length > 1 ? 's' : ''}</p>
+              <p className="text-2xl sm:text-3xl font-bold">{questionsAvecReponses.length}</p>
+              <p className="text-purple-100 text-xs sm:text-sm">question{questionsAvecReponses.length > 1 ? 's' : ''}</p>
             </div>
           </div>
         </CardHeader>
@@ -334,27 +321,29 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       <div className="flex bg-white rounded-xl p-1 shadow-sm border border-gray-200">
         <Button
           variant={activeTab === 'question' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-lg ${
+          className={`flex-1 rounded-lg text-sm sm:text-base ${
             activeTab === 'question'
               ? 'bg-pink-500 text-white shadow-md'
               : 'text-gray-600 hover:bg-gray-50'
           }`}
           onClick={() => setActiveTab('question')}
         >
-          <MessageCircle className="w-4 h-4 mr-2" />
-          Question du jour
+          <MessageCircle className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Question du jour</span>
+          <span className="sm:hidden">Question</span>
         </Button>
         <Button
           variant={activeTab === 'historique' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-lg ${
+          className={`flex-1 rounded-lg text-sm sm:text-base ${
             activeTab === 'historique'
               ? 'bg-pink-500 text-white shadow-md'
               : 'text-gray-600 hover:bg-gray-50'
           }`}
           onClick={() => setActiveTab('historique')}
         >
-          <Users className="w-4 h-4 mr-2" />
-          Nos réponses
+          <Users className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Nos réponses</span>
+          <span className="sm:hidden">Réponses</span>
         </Button>
       </div>
 
@@ -366,10 +355,10 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
               <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg text-gray-900 mb-2">
+                    <CardTitle className="text-base sm:text-lg text-gray-900 mb-2">
                       📝 Question du jour
                     </CardTitle>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:space-x-4">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
                         <span>{formatDate(questionDuJour.dateCreation)}</span>
@@ -383,22 +372,22 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                 </div>
               </CardHeader>
               
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="mb-6">
-                  <div className="bg-white p-6 rounded-xl border-l-4 border-pink-500">
-                    <p className="text-gray-800 text-lg leading-relaxed">
+                  <div className="bg-white p-4 sm:p-6 rounded-xl border-l-4 border-pink-500">
+                    <p className="text-gray-800 text-base sm:text-lg leading-relaxed">
                       {questionDuJour.texte}
                     </p>
                   </div>
                 </div>
 
                 {reponseExistante ? (
-                  <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                  <div className="bg-green-50 p-4 sm:p-6 rounded-xl border border-green-200">
                     <div className="flex items-center mb-3">
                       <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                       <span className="font-medium text-green-800">Votre réponse</span>
                     </div>
-                    <p className="text-gray-700 leading-relaxed">
+                    <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
                       {reponseExistante}
                     </p>
                   </div>
@@ -411,13 +400,13 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                       placeholder="Partagez vos pensées sur cette question..."
                       value={reponseUtilisateur}
                       onChange={(e) => setReponseUtilisateur(e.target.value)}
-                      className="min-h-[120px] resize-none"
+                      className="min-h-[120px] resize-none text-sm sm:text-base"
                       rows={5}
                     />
                     <Button
                       onClick={handleSubmitReponse}
                       disabled={!reponseUtilisateur.trim() || submitting}
-                      className="w-full bg-pink-500 hover:bg-pink-600 text-white h-12 rounded-xl"
+                      className="w-full bg-pink-500 hover:bg-pink-600 text-white h-12 rounded-xl text-sm sm:text-base"
                     >
                       {submitting ? (
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -432,14 +421,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             </Card>
           ) : (
             <Card className="border-pink-200">
-              <CardContent className="p-12 text-center">
-                <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <MessageCircle className="w-10 h-10 text-pink-500" />
+              <CardContent className="p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <MessageCircle className="w-8 h-8 sm:w-10 sm:h-10 text-pink-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                   Aucune question disponible
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-gray-500 text-sm sm:text-base">
                   Toutes les questions ont été répondues ! Félicitations 🎉
                 </p>
               </CardContent>
@@ -453,19 +442,19 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         <div className="space-y-4">
           {questionsAvecReponses.length === 0 ? (
             <Card className="border-pink-200">
-              <CardContent className="p-12 text-center">
-                <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="w-10 h-10 text-pink-500" />
+              <CardContent className="p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <Users className="w-8 h-8 sm:w-10 sm:h-10 text-pink-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                   Aucune réponse pour le moment
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-gray-500 mb-6 text-sm sm:text-base">
                   Commencez par répondre à la question du jour !
                 </p>
                 <Button
                   onClick={() => setActiveTab('question')}
-                  className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-xl"
+                  className="bg-pink-500 hover:bg-pink-600 text-white px-4 sm:px-6 py-3 rounded-xl text-sm sm:text-base"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Voir la question
@@ -474,106 +463,81 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             </Card>
           ) : (
             <>
-              <div className="text-sm text-gray-600 mb-4 flex items-center gap-2">
-                <span>{questionsAvecReponses.length} question{questionsAvecReponses.length > 1 ? 's' : ''} • Triées par date</span>
-                {/* Indicateur de debug en mode développement */}
-                {process.env.NODE_ENV === 'development' && (
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                    Debug: Mon ID = {currentUserId} | Partenaire ID = {partenaire?._id}
-                  </span>
-                )}
-              </div>
+             
               
               <div className="space-y-4">
                 {questionsAvecReponses.map((questionAvecReponses) => {
                   const { question, maReponse, reponsePartenaire } = questionAvecReponses;
                   const statut = getStatutQuestion(questionAvecReponses);
-                  const sontVisibles = reponsesVisibles.has(question._id);
                   
                   return (
                     <Card key={question._id} className="border-pink-100 hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
+                      <CardContent className="p-4 sm:p-6">
                         <div className="mb-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-medium text-gray-900 pr-4 leading-relaxed flex-1">
+                          <div className="flex items-start justify-between mb-4">
+                            <h4 className="font-medium text-gray-900 pr-4 leading-relaxed flex-1 text-sm sm:text-base">
                               {question.texte}
                             </h4>
-                            <div className="flex items-center space-x-2">
-                              <span className={`text-xs px-2 py-1 rounded-full ${statut.bg} ${statut.text}`}>
-                                {statut.texte}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleReponseVisibilite(question._id)}
-                                className="p-2 h-8 w-8"
-                                title={sontVisibles ? "Masquer les réponses" : "Afficher les réponses"}
-                              >
-                                {sontVisibles ? (
-                                  <EyeOff className="w-4 h-4" />
-                                ) : (
-                                  <Eye className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${statut.bg} ${statut.text}`}>
+                              {statut.texte}
+                            </span>
                           </div>
                           
-                          {sontVisibles && (
-                            <div className={`space-y-4 ${isMobile ? '' : 'grid grid-cols-2 gap-4'}`}>
-                              {/* Ma réponse */}
-                              <div className="space-y-2">
-                                <div className="flex items-center text-sm font-medium text-gray-700">
-                                  <User className="w-4 h-4 mr-1" />
-                                  <span>Vous ({currentUser})</span>
-                                </div>
-                                {maReponse ? (
-                                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-300">
-                                    <p className="text-gray-700 leading-relaxed mb-2">
-                                      {maReponse.texte}
-                                    </p>
-                                    <div className="text-xs text-gray-500 flex items-center">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {formatDateTime(maReponse.dateReponse)}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
-                                    <p className="text-gray-500 text-sm">Pas encore de réponse</p>
-                                  </div>
-                                )}
+                          {/* Réponses toujours visibles */}
+                          <div className="space-y-4">
+                            {/* Ma réponse */}
+                            <div className="space-y-2">
+                              <div className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                                <User className="w-4 h-4 mr-1" />
+                                <span>Vous ({currentUser})</span>
                               </div>
-
-                              {/* Réponse du partenaire */}
-                              <div className="space-y-2">
-                                <div className="flex items-center text-sm font-medium text-gray-700">
-                                  <Heart className="w-4 h-4 mr-1 text-pink-500" />
-                                  <span>{partenaire?.nom || 'Votre partenaire'}</span>
+                              {maReponse ? (
+                                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border-l-4 border-blue-300">
+                                  <p className="text-gray-700 leading-relaxed mb-2 text-sm sm:text-base">
+                                    {maReponse.texte}
+                                  </p>
+                                  <div className="text-xs text-gray-500 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {formatDateTime(maReponse.dateReponse)}
+                                  </div>
                                 </div>
-                                {reponsePartenaire ? (
-                                  <div className="bg-pink-50 p-4 rounded-lg border-l-4 border-pink-300">
-                                    <p className="text-gray-700 leading-relaxed mb-2">
-                                      {reponsePartenaire.texte}
-                                    </p>
-                                    <div className="text-xs text-gray-500 flex items-center">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {formatDateTime(reponsePartenaire.dateReponse)}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
-                                    <p className="text-gray-500 text-sm">Pas encore de réponse</p>
-                                  </div>
-                                )}
-                              </div>
+                              ) : (
+                                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
+                                  <p className="text-gray-500 text-xs sm:text-sm">Pas encore de réponse</p>
+                                </div>
+                              )}
                             </div>
-                          )}
+
+                            {/* Réponse du partenaire */}
+                            <div className="space-y-2">
+                              <div className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
+                                <Heart className="w-4 h-4 mr-1 text-pink-500" />
+                                <span>{partenaire?.nom || 'Votre partenaire'}</span>
+                              </div>
+                              {reponsePartenaire ? (
+                                <div className="bg-pink-50 p-3 sm:p-4 rounded-lg border-l-4 border-pink-300">
+                                  <p className="text-gray-700 leading-relaxed mb-2 text-sm sm:text-base">
+                                    {reponsePartenaire.texte}
+                                  </p>
+                                  <div className="text-xs text-gray-500 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {formatDateTime(reponsePartenaire.dateReponse)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border-2 border-dashed border-gray-200 text-center">
+                                  <p className="text-gray-500 text-xs sm:text-sm">Pas encore de réponse</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                          <span className="capitalize bg-gray-100 px-2 py-1 rounded-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 pt-3 border-t border-gray-100 space-y-2 sm:space-y-0">
+                          <span className="capitalize bg-gray-100 px-2 py-1 rounded-full w-fit">
                             {question.categorie}
                           </span>
-                          <div className="flex items-center space-x-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
                             <span>
                               {maReponse && reponsePartenaire ? '2/2 réponses' : 
                                maReponse || reponsePartenaire ? '1/2 réponses' : '0/2 réponses'}
