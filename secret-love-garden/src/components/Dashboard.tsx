@@ -7,6 +7,7 @@ import { Heart, Camera, MessageCircle, Calendar, Settings, LogOut, Send, Loader2
 import Logo from "./Logo";
 import { useToast } from "@/components/ui/use-toast";
 import gallerieService from "@/services/gallerie.service";
+import authService from "@/services/auth.service";
 
 // Hook pour détecter mobile
 const MOBILE_BREAKPOINT = 768;
