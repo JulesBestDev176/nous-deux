@@ -1,8 +1,116 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="36" fill="#fdf2f8"/>
-  <circle cx="90" cy="90" r="50" fill="#ec4899"/>
-  <path d="M90 50c-22.091 0-40 17.909-40 40s17.909 40 40 40 40-17.909 40-40-17.909-40-40-40zm0 60c-11.046 0-20-8.954-20-20s8.954-20 20-20 20 8.954 20 20-8.954 20-20 20z" fill="white"/>
-  <path d="M90 60c-11.046 0-20 8.954-20 20s8.954 20 20 20 20-8.954 20-20-8.954-20-20-20zm0 30c-5.514 0-10-4.486-10-10s4.486-10 10-10 10 4.486 10 10-4.486 10-10 10z" fill="#ec4899"/>
-  <path d="M80 70h20v20h-20z" fill="white"/>
-  <path d="M85 75h10v10h-10z" fill="#ec4899"/>
-</svg> 
+  <!-- Fond avec gradient iOS style -->
+  <rect width="180" height="180" rx="39.6" fill="url(#iosBackgroundGradient)"/>
+  
+  <!-- Ombre douce du cercle principal -->
+  <circle cx="90" cy="92" r="62" fill="url(#shadowGradient)" opacity="0.1"/>
+  
+  <!-- Cercle principal avec gradient iOS -->
+  <circle cx="90" cy="90" r="62" fill="url(#iosMainGradient)"/>
+  
+  <!-- Effet de brillance iOS caractéristique -->
+  <ellipse cx="74" cy="68" rx="24" ry="32" fill="url(#iosShineGradient)" opacity="0.35"/>
+  
+  <!-- Cœurs entrelacés optimisés iOS -->
+  <g transform="translate(90, 90)">
+    <!-- Premier cœur -->
+    <path d="M-3 -15 C-12 -15 -19 -8 -19 1 C-19 10 -7 20 -3 25 C1 20 13 10 13 1 C13 -8 6 -15 -3 -15 Z" 
+          fill="white" opacity="1"/>
+    
+    <!-- Deuxième cœur entrelacé -->
+    <path d="M3 -10 C-6 -10 -13 -3 -13 6 C-13 15 -1 25 3 30 C7 25 19 15 19 6 C19 -3 12 -10 3 -10 Z" 
+          fill="white" opacity="0.9"/>
+    
+    <!-- Détails subtils des cœurs -->
+    <path d="M-3 -12 C-9 -12 -14 -7 -14 -1 C-14 5 -6 13 -3 17 C0 13 8 5 8 -1 C8 -7 3 -12 -3 -12 Z" 
+          fill="url(#heartIosGradient)" opacity="0.25"/>
+    
+    <path d="M3 -7 C-3 -7 -8 -2 -8 4 C-8 10 0 18 3 22 C6 18 14 10 14 4 C14 -2 9 -7 3 -7 Z" 
+          fill="url(#heartIosGradient)" opacity="0.2"/>
+  </g>
+  
+  <!-- Initiales S&H style iOS -->
+  <text x="90" y="100" 
+        font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" 
+        font-size="17" 
+        font-weight="600" 
+        text-anchor="middle" 
+        fill="white" 
+        opacity="0.95">S&H</text>
+  
+  <!-- Points décoratifs style iOS -->
+  <g transform="translate(128, 52)">
+    <circle r="6" fill="url(#iosGoldGradient)"/>
+    <circle r="6" fill="white" opacity="0.2"/>
+    <circle r="4" fill="url(#iosGoldGradient)" opacity="0.8"/>
+  </g>
+  
+  <g transform="translate(52, 128)">
+    <circle r="5" fill="url(#iosRoseGradient)"/>
+    <circle r="5" fill="white" opacity="0.2"/>
+    <circle r="3" fill="url(#iosRoseGradient)" opacity="0.8"/>
+  </g>
+  
+  <!-- Particules subtiles -->
+  <circle cx="120" cy="70" r="2" fill="white" opacity="0.6"/>
+  <circle cx="70" cy="120" r="1.5" fill="white" opacity="0.5"/>
+  
+  <!-- Reflet iOS caractéristique -->
+  <path d="M39.6 39.6 C39.6 17.73 57.33 0 79.2 0 L100.8 0 C122.67 0 140.4 17.73 140.4 39.6 L140.4 52 C140.4 32 124 16 100.8 16 L79.2 16 C56 16 39.6 32 39.6 52 Z" 
+        fill="url(#iosReflectionGradient)" opacity="0.15"/>
+  
+  <!-- Bord subtil iOS -->
+  <rect width="180" height="180" rx="39.6" fill="none" stroke="url(#iosBorderGradient)" stroke-width="0.5" opacity="0.3"/>
+  
+  <!-- Définitions des gradients iOS -->
+  <defs>
+    <linearGradient id="iosBackgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fdf2f8"/>
+      <stop offset="50%" style="stop-color:#fce7f3"/>
+      <stop offset="100%" style="stop-color:#fbcfe8"/>
+    </linearGradient>
+    
+    <linearGradient id="iosMainGradient" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" style="stop-color:#f472b6"/>
+      <stop offset="30%" style="stop-color:#fb7185"/>
+      <stop offset="70%" style="stop-color:#f43f5e"/>
+      <stop offset="100%" style="stop-color:#ef4444"/>
+    </linearGradient>
+    
+    <linearGradient id="shadowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f2937"/>
+      <stop offset="100%" style="stop-color:#374151"/>
+    </linearGradient>
+    
+    <radialGradient id="iosShineGradient" cx="40%" cy="25%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="70%" style="stop-color:#ffffff" stop-opacity="0.4"/>
+      <stop offset="100%" style="stop-color:#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    
+    <linearGradient id="heartIosGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#fdf2f8"/>
+    </linearGradient>
+    
+    <linearGradient id="iosGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+    
+    <linearGradient id="iosRoseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f9a8d4"/>
+      <stop offset="100%" style="stop-color:#f472b6"/>
+    </linearGradient>
+    
+    <linearGradient id="iosReflectionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    
+    <linearGradient id="iosBorderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899"/>
+      <stop offset="100%" style="stop-color:#ef4444"/>
+    </linearGradient>
+  </defs>
+</svg>

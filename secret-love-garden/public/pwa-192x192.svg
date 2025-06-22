@@ -1,8 +1,83 @@
 <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="192" height="192" rx="48" fill="#fdf2f8"/>
-  <circle cx="96" cy="96" r="60" fill="#ec4899"/>
-  <path d="M96 60c-19.882 0-36 16.118-36 36s16.118 36 36 36 36-16.118 36-36-16.118-36-36-36zm0 60c-13.255 0-24-10.745-24-24s10.745-24 24-24 24 10.745 24 24-10.745 24-24 24z" fill="white"/>
-  <path d="M96 72c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24zm0 36c-6.627 0-12-5.373-12-12s5.373-12 12-12 12 5.373 12 12-5.373 12-12 12z" fill="#ec4899"/>
-  <path d="M84 84h24v24h-24z" fill="white"/>
-  <path d="M88 88h16v16h-16z" fill="#ec4899"/>
-</svg> 
+  <!-- Fond avec gradient rose doux -->
+  <rect width="192" height="192" rx="42" fill="url(#backgroundGradient)"/>
+  
+  <!-- Ombre douce du cercle principal -->
+  <circle cx="96" cy="98" r="68" fill="url(#shadowGradient)" opacity="0.15"/>
+  
+  <!-- Cercle principal avec gradient -->
+  <circle cx="96" cy="96" r="68" fill="url(#mainCircleGradient)"/>
+  
+  <!-- Effet de brillance subtil -->
+  <ellipse cx="78" cy="72" rx="28" ry="38" fill="url(#shineGradient)" opacity="0.25"/>
+  
+  <!-- Cœurs entrelacés parfaits -->
+  <g transform="translate(96, 96)">
+    <!-- Premier cœur (position principale) -->
+    <path d="M-4 -18 C-15 -18 -24 -9 -24 2 C-24 13 -10 25 -4 32 C2 25 16 13 16 2 C16 -9 7 -18 -4 -18 Z" 
+          fill="white" opacity="1"/>
+    
+    <!-- Deuxième cœur (entrelacé) -->
+    <path d="M4 -12 C-7 -12 -16 -3 -16 8 C-16 19 -2 31 4 38 C10 31 24 19 24 8 C24 -3 15 -12 4 -12 Z" 
+          fill="white" opacity="0.85"/>
+  </g>
+  
+  <!-- Initiales S&H stylisées -->
+  <text x="96" y="108" 
+        font-family="Arial, -apple-system, BlinkMacSystemFont, sans-serif" 
+        font-size="20" 
+        font-weight="700" 
+        text-anchor="middle" 
+        fill="white" 
+        opacity="0.95">S&H</text>
+  
+  <!-- Points décoratifs dorés -->
+  <circle cx="142" cy="50" r="7" fill="url(#goldGradient)">
+    <circle cx="0" cy="0" r="7" fill="white" opacity="0.3"/>
+  </circle>
+  
+  <circle cx="50" cy="142" r="6" fill="url(#roseGradient)">
+    <circle cx="0" cy="0" r="6" fill="white" opacity="0.3"/>
+  </circle>
+  
+  <!-- Particules d'amour subtiles -->
+  <circle cx="132" cy="68" r="2.5" fill="white" opacity="0.7"/>
+  <circle cx="68" cy="132" r="2" fill="white" opacity="0.6"/>
+  <circle cx="124" cy="124" r="1.5" fill="white" opacity="0.5"/>
+  
+  <!-- Définitions des gradients -->
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fdf2f8"/>
+      <stop offset="50%" style="stop-color:#fce7f3"/>
+      <stop offset="100%" style="stop-color:#fbcfe8"/>
+    </linearGradient>
+    
+    <linearGradient id="mainCircleGradient" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" style="stop-color:#f472b6"/>
+      <stop offset="35%" style="stop-color:#fb7185"/>
+      <stop offset="70%" style="stop-color:#f43f5e"/>
+      <stop offset="100%" style="stop-color:#ef4444"/>
+    </linearGradient>
+    
+    <linearGradient id="shadowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f2937"/>
+      <stop offset="100%" style="stop-color:#374151"/>
+    </linearGradient>
+    
+    <radialGradient id="shineGradient" cx="30%" cy="30%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+    
+    <linearGradient id="roseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f9a8d4"/>
+      <stop offset="100%" style="stop-color:#f472b6"/>
+    </linearGradient>
+  </defs>
+</svg>
