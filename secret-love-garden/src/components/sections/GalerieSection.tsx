@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, Heart, Calendar, User, Loader2, Image as ImageIcon, Plus, X, AlertCircle, ChevronLeft, ChevronRight, Download, Maximize2 } from "lucide-react";
+import { Camera, Upload, Heart, Calendar, User, Loader2, Image as ImageIcon, Plus, X, AlertCircle, ChevronLeft, ChevronRight, Download, Maximize2, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import gallerieService from "@/services/gallerie.service";
 
 interface Partenaire {
   _id: string;
   nom: string;
-  // Ajoutez d'autres propriétés si nécessaire
 }
 
 interface GallerieSectionProps {
@@ -46,10 +45,68 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
+  // États pour PWA
+  const [isPWA, setIsPWA] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [imageLoadingStates, setImageLoadingStates] = useState<Map<string, 'loading' | 'loaded' | 'error'>>(new Map());
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   useEffect(() => {
     loadImages();
+    detectPWA();
+    setupNetworkListeners();
   }, []);
+
+  // Fonction pour ajouter des logs de debug
+  const addDebugLog = (message: string) => {
+    console.log(`🔍 PWA Debug: ${message}`);
+    setDebugInfo(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
+
+  // Détection PWA améliorée
+  const detectPWA = () => {
+    interface NavigatorStandalone extends Navigator {
+      standalone?: boolean;
+    }
+    const nav = window.navigator as NavigatorStandalone;
+
+    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches ||
+                     nav.standalone ||
+                     document.referrer.includes('android-app://') ||
+                     window.location.href.includes('?pwa=true');
+    
+    setIsPWA(isPWAMode);
+    
+    if (isPWAMode) {
+      addDebugLog('Mode PWA détecté');
+      addDebugLog(`User Agent: ${navigator.userAgent.substring(0, 50)}...`);
+      addDebugLog(`Display mode: ${window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}`);
+    } else {
+      addDebugLog('Mode navigateur normal');
+    }
+  };
+
+  // Gestion réseau pour PWA
+  const setupNetworkListeners = () => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      addDebugLog('Connexion réseau rétablie');
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      addDebugLog('Connexion réseau perdue');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  };
 
   // Gestion des touches clavier pour la navigation
   useEffect(() => {
@@ -89,10 +146,21 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   const loadImages = async () => {
     try {
       setLoading(true);
+      addDebugLog('Début chargement des images');
+      
       const response = await gallerieService.getImages();
-      setImages(response.data || []);
+      const imageList = response.data || [];
+      
+      addDebugLog(`${imageList.length} images récupérées de l'API`);
+      if (imageList.length > 0) {
+        addDebugLog(`Première image URL: ${imageList[0].url}`);
+      }
+      
+      setImages(imageList);
+      
     } catch (error) {
       console.error('Erreur lors du chargement des images:', error);
+      addDebugLog(`Erreur chargement: ${error}`);
       toast({
         title: "Erreur",
         description: "Impossible de charger les images",
@@ -103,14 +171,165 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
     }
   };
 
-  // Fonction simplifiée pour l'URL des images
+  // Fonction optimisée pour l'URL des images en PWA
   const getImageUrl = (imageUrl: string) => {
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
+    if (!imageUrl) {
+      addDebugLog('URL image vide');
+      return '';
     }
     
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    return imageUrl.startsWith('/') ? `${baseUrl}${imageUrl}` : `${baseUrl}/${imageUrl}`;
+    let finalUrl = imageUrl;
+    
+    // Si c'est déjà une URL complète
+    if (imageUrl.startsWith('http')) {
+      // Force HTTPS pour PWA
+      finalUrl = imageUrl.replace('http://', 'https://');
+      addDebugLog(`URL Cloudinary transformée: ${finalUrl}`);
+    } else {
+      // Construction URL locale
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const secureBaseUrl = isPWA ? baseUrl.replace('http://', 'https://') : baseUrl;
+      
+      finalUrl = imageUrl.startsWith('/') ? 
+        `${secureBaseUrl}${imageUrl}` : 
+        `${secureBaseUrl}/${imageUrl}`;
+      
+      addDebugLog(`URL locale construite: ${finalUrl}`);
+    }
+    
+    return finalUrl;
+  };
+
+  // Composant d'image amélioré avec diagnostic PWA
+  const PWAImage = ({
+    src,
+    alt,
+    className,
+    onError,
+    onLoad,
+    imageId,
+    ...props
+  }: React.ImgHTMLAttributes<HTMLImageElement> & {
+    src: string;
+    alt?: string;
+    className?: string;
+    onError?: (error?: unknown) => void;
+    onLoad?: () => void;
+    imageId: string;
+  }) => {
+    const [imageSrc, setImageSrc] = useState<string>(src);
+    const [hasError, setHasError] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [retryCount, setRetryCount] = useState(0);
+
+    useEffect(() => {
+      setImageLoadingStates(prev => new Map(prev).set(imageId, 'loading'));
+      loadImageWithFallbacks();
+    }, [src, retryCount]);
+
+    const loadImageWithFallbacks = async () => {
+      setIsLoading(true);
+      setHasError(false);
+      
+      const urls = [
+        src,
+        src.replace('http://', 'https://'),
+        // Ajout de paramètres Cloudinary pour forcer le refresh
+        src.includes('cloudinary.com') ? `${src}?_=${Date.now()}` : null
+      ].filter(Boolean) as string[];
+      
+      addDebugLog(`Tentative de chargement image ${imageId} avec ${urls.length} URLs`);
+      
+      for (let i = 0; i < urls.length; i++) {
+        try {
+          const testUrl = urls[i];
+          addDebugLog(`Test URL ${i + 1}/${urls.length}: ${testUrl}`);
+          
+          // Test avec fetch pour vérifier l'accessibilité
+          const response = await fetch(testUrl, {
+            method: 'HEAD',
+            mode: 'cors',
+            credentials: 'omit'
+          });
+          
+          if (response.ok) {
+            addDebugLog(`✅ URL valide trouvée pour image ${imageId}`);
+            setImageSrc(testUrl);
+            setImageLoadingStates(prev => new Map(prev).set(imageId, 'loaded'));
+            setIsLoading(false);
+            return;
+          }
+          
+        } catch (error) {
+          addDebugLog(`❌ Échec URL ${i + 1}: ${error}`);
+          continue;
+        }
+      }
+      
+      // Toutes les URLs ont échoué
+      addDebugLog(`❌ Toutes les URLs ont échoué pour image ${imageId}`);
+      setHasError(true);
+      setImageLoadingStates(prev => new Map(prev).set(imageId, 'error'));
+      setIsLoading(false);
+      onError?.();
+    };
+
+    const handleRetry = () => {
+      addDebugLog(`🔄 Retry image ${imageId} (tentative ${retryCount + 1})`);
+      setRetryCount(prev => prev + 1);
+    };
+
+    if (hasError) {
+      return (
+        <div className={`${className} bg-gray-100 flex flex-col items-center justify-center p-4`}>
+          <AlertCircle className="w-8 h-8 text-gray-400 mb-2" />
+          <p className="text-gray-500 text-sm text-center mb-3">
+            Image non disponible
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRetry}
+            className="text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Réessayer
+          </Button>
+          {isPWA && (
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Mode PWA - Vérifiez la connexion
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <div className={`${className} bg-gray-100 flex items-center justify-center`}>
+          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={imageSrc}
+        alt={alt}
+        className={className}
+        onLoad={() => {
+          addDebugLog(`✅ Image ${imageId} chargée avec succès`);
+          onLoad?.();
+        }}
+        onError={(e) => {
+          addDebugLog(`❌ Erreur chargement image ${imageId}: ${e}`);
+          setHasError(true);
+          onError?.();
+        }}
+        loading="lazy"
+        {...props}
+      />
+    );
   };
 
   // Fonctions pour le lightbox
@@ -155,10 +374,14 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
     }
   };
 
-  // Fonction pour télécharger une image
+  // Fonction pour télécharger une image (optimisée PWA)
   const downloadImage = async (imageUrl: string, imageName: string) => {
     try {
-      const response = await fetch(getImageUrl(imageUrl));
+      const fullUrl = getImageUrl(imageUrl);
+      addDebugLog(`Tentative téléchargement: ${fullUrl}`);
+      
+      // Fallback classique
+      const response = await fetch(fullUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -169,11 +392,13 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
+      addDebugLog('✅ Téléchargement réussi');
       toast({
         title: "Image téléchargée !",
         description: "L'image a été sauvegardée",
       });
     } catch (error) {
+      addDebugLog(`❌ Erreur téléchargement: ${error}`);
       toast({
         title: "Erreur de téléchargement",
         description: "Impossible de télécharger l'image",
@@ -183,17 +408,12 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   };
 
   const handleImageError = (imageId: string, imageUrl: string) => {
-    console.error('Failed to load image:', imageUrl);
+    addDebugLog(`❌ Erreur image ${imageId}: ${imageUrl}`);
     setImageLoadErrors(prev => new Set(prev).add(imageId));
-    
-    toast({
-      title: "Erreur de chargement",
-      description: "Impossible de charger l'image",
-      variant: "destructive",
-    });
   };
 
   const retryImageLoad = (imageId: string) => {
+    addDebugLog(`🔄 Retry manuel image ${imageId}`);
     setImageLoadErrors(prev => {
       const newSet = new Set(prev);
       newSet.delete(imageId);
@@ -242,8 +462,18 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
       return;
     }
 
+    if (!isOnline) {
+      toast({
+        title: "Pas de connexion",
+        description: "Vérifiez votre connexion internet",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setUploading(true);
+      addDebugLog('Début upload image');
       
       const formData = new FormData();
       formData.append('image', selectedFile);
@@ -253,6 +483,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
 
       await gallerieService.uploadImage(formData);
       
+      addDebugLog('✅ Upload réussi');
       toast({
         title: "Image partagée !",
         description: "Votre souvenir a été ajouté à la galerie 💕",
@@ -266,6 +497,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
       loadImages();
       
     } catch (error) {
+      addDebugLog(`❌ Erreur upload: ${error}`);
       console.error('Erreur lors de l\'upload:', error);
       toast({
         title: "Erreur d'upload",
@@ -301,6 +533,9 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-pink-500 mx-auto mb-4" />
           <p className="text-gray-600">Chargement de vos souvenirs...</p>
+          {isPWA && (
+            <p className="text-xs text-gray-500 mt-2">Mode PWA - Optimisation en cours...</p>
+          )}
         </div>
       </div>
     );
@@ -310,16 +545,18 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header avec indicateur PWA */}
       <Card className="bg-gradient-to-r from-pink-500 to-rose-500 text-white border-0 shadow-lg">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold mb-2">
+              <CardTitle className="text-2xl font-bold mb-2 flex items-center gap-2">
                 💕 Galerie d'amour
+                {isPWA && <span className="text-xs bg-white/20 px-2 py-1 rounded">PWA</span>}
               </CardTitle>
-              <p className="text-pink-100">
+              <p className="text-pink-100 flex items-center gap-2">
                 Vos plus beaux souvenirs ensemble
+                {isOnline ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
               </p>
             </div>
             <div className="text-right">
@@ -330,20 +567,50 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
         </CardHeader>
       </Card>
 
+      {/* Debug info pour PWA */}
+      {isPWA && debugInfo.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Debug PWA
+            </h4>
+            <div className="text-xs text-blue-700 space-y-1 max-h-32 overflow-y-auto">
+              {debugInfo.map((log, index) => (
+                <div key={index} className="font-mono">{log}</div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Alerte mode hors ligne */}
+      {!isOnline && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-orange-700">
+              <WifiOff className="w-5 h-5" />
+              <span className="text-sm font-medium">Mode hors ligne - Certaines images peuvent ne pas être disponibles</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bouton d'ajout */}
       {!showUploadForm && (
         <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors">
           <CardContent className="p-8 text-center">
             <Button
               onClick={() => setShowUploadForm(true)}
-              className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 h-auto rounded-xl"
+              disabled={!isOnline}
+              className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 h-auto rounded-xl disabled:opacity-50"
               size="lg"
             >
               <Camera className="w-5 h-5 mr-3" />
               Ajouter un souvenir
             </Button>
             <p className="text-gray-500 mt-3 text-sm">
-              Partagez vos moments précieux
+              {isOnline ? "Partagez vos moments précieux" : "Connexion requise pour ajouter"}
             </p>
           </CardContent>
         </Card>
@@ -434,8 +701,8 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || uploading}
-                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white h-12 rounded-xl"
+                disabled={!selectedFile || uploading || !isOnline}
+                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white h-12 rounded-xl disabled:opacity-50"
               >
                 {uploading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -471,7 +738,8 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             </p>
             <Button
               onClick={() => setShowUploadForm(true)}
-              className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-xl"
+              disabled={!isOnline}
+              className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-xl disabled:opacity-50"
             >
               <Plus className="w-4 h-4 mr-2" />
               Ajouter une photo
@@ -505,12 +773,12 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
                     </Button>
                   </div>
                 ) : (
-                  <img
+                  <PWAImage
                     src={getImageUrl(image.url)}
                     alt={image.legende || "Souvenir"}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     onError={() => handleImageError(image._id, image.url)}
-                    loading="lazy"
+                    imageId={image._id}
                   />
                 )}
                 
@@ -597,7 +865,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             </Button>
           )}
 
-          {/* Bouton de téléchargement */}
+          {/* Bouton de téléchargement/partage */}
           <Button
             variant="ghost"
             size="sm"
@@ -606,6 +874,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
               downloadImage(currentImage.url, currentImage._id);
             }}
             className="absolute bottom-4 right-4 z-10 text-white hover:bg-white/20 rounded-full p-2"
+            title="Télécharger"
           >
             <Download className="w-5 h-5" />
           </Button>
@@ -618,10 +887,11 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <img
+            <PWAImage
               src={getImageUrl(currentImage.url)}
               alt={currentImage.legende || "Souvenir"}
               className="max-w-full max-h-full object-contain"
+              imageId={`lightbox-${currentImage._id}`}
             />
             
             {/* Informations de l'image */}

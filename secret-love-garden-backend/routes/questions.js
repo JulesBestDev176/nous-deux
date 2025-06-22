@@ -55,50 +55,90 @@ router.get(
   questionController.getQuestionsPersonnalisees
 );
 
+// 🆕 @route   GET /api/questions/couple-responses
+// @desc    Récupérer toutes les questions avec les réponses du couple
+// @access  Privé
+router.get(
+  '/couple-responses',
+  protegerRoutes,
+  questionController.getQuestionsAvecReponsesCouple
+);
+
 // @route   GET /api/questions/reponses-partenaire
-// @desc    Récupérer les réponses du partenaire aux questions
+// @desc    Récupérer les réponses du partenaire aux questions (ancienne version - conservée pour compatibilité)
 // @access  Privé
 router.get('/reponses-partenaire', protegerRoutes, async (req, res) => {
   try {
-    const utilisateur = await Utilisateur.findById(req.user.id);
+    console.log('🔍 Route reponses-partenaire appelée pour utilisateur:', req.utilisateur.id);
+    
+    const utilisateur = await Utilisateur.findById(req.utilisateur.id).populate('partenaire');
+    
     if (!utilisateur || !utilisateur.partenaire) {
-      return res.status(404).json({ success: false, message: 'Partenaire non trouvé' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Partenaire non trouvé' 
+      });
     }
 
-    // 1. Trouver toutes les réponses du partenaire
-    const reponsesPartenaire = await Reponse.find({ auteur: utilisateur.partenaire }).populate('question');
+    console.log('👥 Partenaire trouvé:', {
+      id: utilisateur.partenaire._id,
+      nom: utilisateur.partenaire.nom
+    });
+
+    // Trouver toutes les réponses du partenaire
+    const reponsesPartenaire = await Reponse.find({ 
+      utilisateur: utilisateur.partenaire._id 
+    })
+    .populate('question')
+    .populate('utilisateur', 'nom')
+    .sort({ dateReponse: -1 });
+
+    console.log(`📊 ${reponsesPartenaire.length} réponses trouvées pour le partenaire`);
 
     if (!reponsesPartenaire || reponsesPartenaire.length === 0) {
       return res.json({ success: true, data: [] });
     }
 
-    // 2. Formater les données pour le front
+    // Formater les données pour le front
     const reponsesFormatees = reponsesPartenaire.map(reponse => {
       // S'assurer que la question est bien peuplée
-      if (!reponse.question) return null;
+      if (!reponse.question) {
+        console.warn('⚠️ Question manquante pour la réponse:', reponse._id);
+        return null;
+      }
 
       return {
         _id: reponse._id,
         texte: reponse.texte,
         dateReponse: reponse.dateReponse,
-        lu: reponse.lu,
         question: {
           _id: reponse.question._id,
           texte: reponse.question.texte,
-          type: reponse.question.type,
           categorie: reponse.question.categorie,
+          dateCreation: reponse.question.dateCreation
         },
-        auteur: { // On peut inclure l'auteur si besoin, même si on sait que c'est le partenaire
-          _id: utilisateur.partenaire,
+        utilisateur: {
+          _id: reponse.utilisateur._id,
+          nom: reponse.utilisateur.nom
         }
       };
     }).filter(Boolean); // Filtrer les réponses dont la question a été supprimée
 
-    res.json({ success: true, data: reponsesFormatees });
+    console.log(`✅ ${reponsesFormatees.length} réponses formatées envoyées`);
+
+    res.json({ 
+      success: true, 
+      count: reponsesFormatees.length,
+      data: reponsesFormatees 
+    });
 
   } catch (error) {
-    console.error("Erreur - reponses-partenaire:", error);
-    res.status(500).json({ success: false, message: "Erreur serveur" });
+    console.error("❌ Erreur - reponses-partenaire:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erreur serveur",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

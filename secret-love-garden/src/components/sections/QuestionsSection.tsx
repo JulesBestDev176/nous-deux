@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, Send, Heart, Calendar, User, Loader2, CheckCircle, Clock, BookOpen, Lightbulb, Users, Eye, EyeOff } from "lucide-react";
+import { MessageCircle, Send, Heart, Calendar, User, Loader2, CheckCircle, Clock, BookOpen, Lightbulb, Users, Eye, EyeOff, AlertCircle } from "lucide-react";
 import questionService from "@/services/questions.service";
 
 interface QuestionsSectionProps {
@@ -11,7 +11,6 @@ interface QuestionsSectionProps {
   partenaire: {
     _id: string;
     nom: string;
-    // Ajoutez d'autres propriétés si nécessaire
   };
   isMobile: boolean;
   toast: (options: { title: string; description?: string; variant?: string }) => void;
@@ -32,7 +31,7 @@ interface Question {
 
 interface Reponse {
   _id: string;
-  question: Question;
+  question?: Question;
   texte: string;
   dateReponse: string;
   utilisateur: {
@@ -56,8 +55,15 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
   const [reponseExistante, setReponseExistante] = useState<string>("");
   const [activeTab, setActiveTab] = useState<'question' | 'historique'>('question');
   const [reponsesVisibles, setReponsesVisibles] = useState<Set<string>>(new Set());
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   useEffect(() => {
+    // Récupérer l'ID de l'utilisateur actuel
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.id) {
+      setCurrentUserId(user.id);
+    }
+    
     loadQuestionDuJour();
     loadQuestionsAvecReponses();
   }, []);
@@ -92,34 +98,87 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
   const loadQuestionsAvecReponses = async () => {
     try {
+      console.log('🔄 Chargement des questions avec réponses du couple...');
+      
       // Récupérer toutes les questions qui ont au moins une réponse du couple
       const response = await questionService.getQuestionsAvecReponsesCouple();
       
-      // Organiser les données par question avec les réponses de chaque partenaire
-      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }) => ({
-        question: item.question,
-        maReponse: item.reponses.find((r: Reponse) => r.utilisateur.nom === currentUser),
-        reponsePartenaire: item.reponses.find((r: Reponse) => r.utilisateur.nom !== currentUser)
-      }));
+      console.log('📥 Réponse API reçue:', response);
       
+      if (!response.data || !Array.isArray(response.data)) {
+        console.warn('⚠️ Format de réponse inattendu:', response);
+        setQuestionsAvecReponses([]);
+        return;
+      }
+
+      // Récupérer l'ID de l'utilisateur actuel
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const monId = user.id;
+      
+      console.log('👤 Mon ID utilisateur:', monId);
+      console.log('👥 ID partenaire:', partenaire?._id);
+
+      // Organiser les données par question avec les réponses de chaque partenaire
+      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }) => {
+        console.log('🔍 Traitement question:', {
+          questionId: item.question._id,
+          questionTexte: item.question.texte.substring(0, 50) + '...',
+          nombreReponses: item.reponses?.length || 0,
+          reponses: item.reponses?.map((r: Reponse) => ({
+            utilisateurId: r.utilisateur._id,
+            utilisateurNom: r.utilisateur.nom,
+            estMoi: r.utilisateur._id === monId,
+            estPartenaire: r.utilisateur._id === partenaire?._id
+          }))
+        });
+
+        // Trouver ma réponse et celle de mon partenaire par ID (plus fiable que le nom)
+        const maReponse = item.reponses?.find((r: Reponse) => r.utilisateur._id === monId);
+        const reponsePartenaire = item.reponses?.find((r: Reponse) => r.utilisateur._id === partenaire?._id);
+
+        console.log('📝 Réponses trouvées:', {
+          questionId: item.question._id,
+          aiMaReponse: !!maReponse,
+          aReponsePartenaire: !!reponsePartenaire,
+          maReponseTexte: maReponse?.texte?.substring(0, 30) + '...' || 'N/A',
+          reponsePartenaireTexte: reponsePartenaire?.texte?.substring(0, 30) + '...' || 'N/A'
+        });
+
+        return {
+          question: item.question,
+          maReponse,
+          reponsePartenaire
+        };
+      });
+      
+      console.log(`✅ ${questionsOrganisees.length} questions organisées pour affichage`);
       setQuestionsAvecReponses(questionsOrganisees);
+      
     } catch (error) {
-      console.error('Erreur lors du chargement des réponses du couple:', error);
+      console.error('❌ Erreur lors du chargement des réponses du couple:', error);
+      
       // Fallback: charger seulement mes réponses
       try {
+        console.log('🔄 Tentative de fallback vers mes réponses uniquement...');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user.id) {
           const response = await questionService.getReponsesUtilisateur(user.id);
           const mesReponses = response.data || [];
           const questionsSimples = mesReponses.map((reponse: Reponse) => ({
-            question: reponse.question,
+            question: reponse.question!,
             maReponse: reponse,
             reponsePartenaire: undefined
           }));
           setQuestionsAvecReponses(questionsSimples);
+          console.log(`📋 Fallback réussi: ${questionsSimples.length} questions avec mes réponses`);
         }
       } catch (fallbackError) {
-        console.error('Erreur lors du chargement des réponses:', fallbackError);
+        console.error('❌ Erreur lors du fallback:', fallbackError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger l'historique des réponses",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -149,7 +208,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       setReponseExistante(reponseUtilisateur.trim());
       setReponseUtilisateur("");
-      loadQuestionsAvecReponses(); // Recharger l'historique
+      
+      // Recharger l'historique après un court délai pour laisser le temps au serveur
+      setTimeout(() => {
+        loadQuestionsAvecReponses();
+      }, 500);
       
     } catch (error) {
       console.error('Erreur lors de l\'envoi de la réponse:', error);
@@ -198,13 +261,37 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     const { maReponse, reponsePartenaire } = questionAvecReponses;
     
     if (maReponse && reponsePartenaire) {
-      return { statut: 'complete', couleur: 'green', texte: 'Vous avez tous les deux répondu' };
+      return { 
+        statut: 'complete', 
+        couleur: 'green', 
+        texte: 'Vous avez tous les deux répondu',
+        bg: 'bg-green-100',
+        text: 'text-green-700'
+      };
     } else if (maReponse && !reponsePartenaire) {
-      return { statut: 'attente', couleur: 'orange', texte: `En attente de ${partenaire?.nom || 'votre partenaire'}` };
+      return { 
+        statut: 'attente', 
+        couleur: 'orange', 
+        texte: `En attente de ${partenaire?.nom || 'votre partenaire'}`,
+        bg: 'bg-orange-100',
+        text: 'text-orange-700'
+      };
     } else if (!maReponse && reponsePartenaire) {
-      return { statut: 'a_repondre', couleur: 'blue', texte: 'À votre tour de répondre' };
+      return { 
+        statut: 'a_repondre', 
+        couleur: 'blue', 
+        texte: 'À votre tour de répondre',
+        bg: 'bg-blue-100',
+        text: 'text-blue-700'
+      };
     } else {
-      return { statut: 'vide', couleur: 'gray', texte: 'Aucune réponse' };
+      return { 
+        statut: 'vide', 
+        couleur: 'gray', 
+        texte: 'Aucune réponse',
+        bg: 'bg-gray-100',
+        text: 'text-gray-700'
+      };
     }
   };
 
@@ -385,8 +472,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             </Card>
           ) : (
             <>
-              <div className="text-sm text-gray-600 mb-4">
-                {questionsAvecReponses.length} question{questionsAvecReponses.length > 1 ? 's' : ''} • Triées par date
+              <div className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+                <span>{questionsAvecReponses.length} question{questionsAvecReponses.length > 1 ? 's' : ''} • Triées par date</span>
+                {/* Indicateur de debug en mode développement */}
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
+                    Debug: Mon ID = {currentUserId} | Partenaire ID = {partenaire?._id}
+                  </span>
+                )}
               </div>
               
               <div className="space-y-4">
@@ -404,7 +497,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                               {question.texte}
                             </h4>
                             <div className="flex items-center space-x-2">
-                              <span className={`text-xs px-2 py-1 rounded-full bg-${statut.couleur}-100 text-${statut.couleur}-700`}>
+                              <span className={`text-xs px-2 py-1 rounded-full ${statut.bg} ${statut.text}`}>
                                 {statut.texte}
                               </span>
                               <Button
@@ -412,6 +505,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                                 size="sm"
                                 onClick={() => toggleReponseVisibilite(question._id)}
                                 className="p-2 h-8 w-8"
+                                title={sontVisibles ? "Masquer les réponses" : "Afficher les réponses"}
                               >
                                 {sontVisibles ? (
                                   <EyeOff className="w-4 h-4" />

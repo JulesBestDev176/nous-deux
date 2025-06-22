@@ -270,3 +270,155 @@ exports.getQuestionsPersonnalisees = async (req, res) => {
     });
   }
 };
+
+// 🆕 NOUVELLE FONCTION: Récupérer les questions avec les réponses du couple
+exports.getQuestionsAvecReponsesCouple = async (req, res) => {
+  try {
+    console.log('🔍 Début getQuestionsAvecReponsesCouple pour utilisateur:', req.utilisateur.id);
+    
+    // 1. Récupérer l'utilisateur connecté avec son partenaire
+    const utilisateurConnecte = await Utilisateur.findById(req.utilisateur.id).populate('partenaire');
+    
+    if (!utilisateurConnecte) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    console.log('👤 Utilisateur connecté:', {
+      id: utilisateurConnecte._id,
+      nom: utilisateurConnecte.nom,
+      partenaireId: utilisateurConnecte.partenaire?._id,
+      partenaireNom: utilisateurConnecte.partenaire?.nom
+    });
+
+    if (!utilisateurConnecte.partenaire) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun partenaire associé à ce compte'
+      });
+    }
+
+    const partenaireId = utilisateurConnecte.partenaire._id;
+    const utilisateurId = utilisateurConnecte._id;
+
+    // 2. Récupérer toutes les questions qui ont au moins une réponse de l'un des deux partenaires
+    const questionsAvecReponses = await Question.aggregate([
+      {
+        // Étape 1: Faire un lookup pour récupérer toutes les réponses
+        $lookup: {
+          from: 'reponses',
+          localField: '_id',
+          foreignField: 'question',
+          as: 'toutesReponses'
+        }
+      },
+      {
+        // Étape 2: Filtrer les questions qui ont au moins une réponse d'un des partenaires
+        $match: {
+          'toutesReponses.utilisateur': { 
+            $in: [utilisateurId, partenaireId] 
+          }
+        }
+      },
+      {
+        // Étape 3: Filtrer uniquement les réponses des deux partenaires
+        $addFields: {
+          reponsesCouple: {
+            $filter: {
+              input: '$toutesReponses',
+              as: 'reponse',
+              cond: {
+                $in: ['$$reponse.utilisateur', [utilisateurId, partenaireId]]
+              }
+            }
+          }
+        }
+      },
+      {
+        // Étape 4: Populer les informations des utilisateurs
+        $lookup: {
+          from: 'utilisateurs',
+          localField: 'reponsesCouple.utilisateur',
+          foreignField: '_id',
+          as: 'utilisateursInfo'
+        }
+      },
+      {
+        // Étape 5: Restructurer les données pour le frontend
+        $project: {
+          question: {
+            _id: '$_id',
+            texte: '$texte',
+            categorie: '$categorie',
+            dateCreation: '$dateCreation'
+          },
+          reponses: {
+            $map: {
+              input: '$reponsesCouple',
+              as: 'reponse',
+              in: {
+                _id: '$$reponse._id',
+                texte: '$$reponse.texte',
+                dateReponse: '$$reponse.dateReponse',
+                utilisateur: {
+                  $let: {
+                    vars: {
+                      user: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: '$utilisateursInfo',
+                              as: 'user',
+                              cond: { $eq: ['$$user._id', '$$reponse.utilisateur'] }
+                            }
+                          },
+                          0
+                        ]
+                      }
+                    },
+                    in: {
+                      _id: '$$user._id',
+                      nom: '$$user.nom'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        // Étape 6: Trier par date de création de la question (plus récent en premier)
+        $sort: { 'question.dateCreation': -1 }
+      }
+    ]);
+
+    console.log(`📊 ${questionsAvecReponses.length} questions trouvées avec réponses du couple`);
+    
+    // Log détaillé pour debug
+    questionsAvecReponses.forEach((item, index) => {
+      console.log(`📝 Question ${index + 1}:`, {
+        questionId: item.question._id,
+        texte: item.question.texte.substring(0, 50) + '...',
+        nombreReponses: item.reponses.length,
+        auteurs: item.reponses.map(r => r.utilisateur.nom)
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      count: questionsAvecReponses.length,
+      data: questionsAvecReponses
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur dans getQuestionsAvecReponsesCouple:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des réponses du couple',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
