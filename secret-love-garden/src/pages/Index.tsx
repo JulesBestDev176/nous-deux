@@ -6,6 +6,7 @@ import { Heart, Lock, Users, Loader2 } from "lucide-react";
 import Logo from "@/components/Logo";
 import Dashboard from "@/components/Dashboard";
 import { useToast } from "@/components/ui/use-toast";
+import authService from "@/services/auth.service";
 
 // Hook pour détecter mobile
 const MOBILE_BREAKPOINT = 768;
@@ -48,27 +49,17 @@ const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }) => {
 
     setLoading(true);
     try {
-      // Simulation d'une connexion réussie pour la démo
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulation d'un utilisateur
-      const mockUser = { 
-        nom: "Souleymane", 
-        _id: "user123",
-        token: "mock-token-123"
-      };
-      
-      localStorage.setItem("token", "mock-token-123");
-      onLogin(mockUser);
-      
+      // Connexion réelle via le backend
+      const response = await authService.connexion(accessCode);
+      onLogin(response.user);
       toast({
         title: "Connexion réussie",
-        description: `Bienvenue ${mockUser.nom} !`,
+        description: `Bienvenue ${response.user.nom} !`,
       });
     } catch (error) {
       toast({
         title: "Erreur de connexion",
-        description: "Code d'accès invalide",
+        description: error?.message || "Code d'accès invalide",
         variant: "destructive",
       });
     } finally {

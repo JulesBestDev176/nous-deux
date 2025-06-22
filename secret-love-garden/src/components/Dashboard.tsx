@@ -8,6 +8,7 @@ import Logo from "./Logo";
 import { useToast } from "@/components/ui/use-toast";
 import gallerieService from "@/services/gallerie.service";
 import authService from "@/services/auth.service";
+import questionService from "@/services/questions.service";
 
 // Hook pour détecter mobile
 const MOBILE_BREAKPOINT = 768;
@@ -27,12 +28,6 @@ function useIsMobile() {
 
   return isMobile;
 }
-
-const mockQuestionDuJour = {
-  _id: "1",
-  texte: "Quel est votre rêve le plus cher que nous pourrions réaliser ensemble cette année ?",
-  dateCreation: "2024-01-20"
-};
 
 interface DashboardProps {
   currentUser: string;
@@ -115,16 +110,13 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
 
     setLoadingReponse(true);
     try {
-      // Simulation API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await questionService.soumettreReponse({
+        questionId: question._id,
+        texte: reponse,
+      });
       setReponse("");
       setShowAnswerField(false);
-      setReponseExistante({
-        _id: "temp",
-        question: question._id,
-        texte: reponse,
-        dateReponse: new Date().toISOString()
-      });
+      setReponseExistante(res.data || res);
       
       onReponseSubmit();
       
@@ -247,7 +239,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const [newCode, setNewCode] = useState("");
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [questionDuJour, setQuestionDuJour] = useState(mockQuestionDuJour);
+  const [questionDuJour, setQuestionDuJour] = useState(null);
   const [reponseExistante, setReponseExistante] = useState(null);
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingReponse, setLoadingReponse] = useState(false);
@@ -255,14 +247,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [questionsPersonnalisees, setQuestionsPersonnalisees] = useState([
-    {
-      _id: "1",
-      texte: "Quel est le moment le plus mémorable que nous avons vécu ensemble ?",
-      createur: { nom: currentUser },
-      dateCreation: "2024-01-18"
-    }
-  ]);
+  const [questionsPersonnalisees, setQuestionsPersonnalisees] = useState([]);
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -278,10 +263,44 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   ];
 
   useEffect(() => {
+    // Charger la question du jour
+    const fetchQuestionDuJour = async () => {
+      setLoadingQuestion(true);
+      try {
+        const res = await questionService.getQuestionDuJour();
+        setQuestionDuJour(res.data || res); // selon la structure
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la question du jour",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingQuestion(false);
+      }
+    };
+    fetchQuestionDuJour();
+
+    // Charger les questions personnalisées
+    const fetchQuestionsPerso = async () => {
+      try {
+        const res = await questionService.getQuestionsPersonnalisees();
+        setQuestionsPersonnalisees(res.data || res);
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les questions personnalisées",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchQuestionsPerso();
+
+    // Charger les images (déjà présent)
     const fetchImages = async () => {
       try {
         const res = await gallerieService.getImages();
-        setImages(res); // ou res.data selon la structure retournée
+        setImages(res.data || res);
       } catch (error) {
         toast({
           title: "Erreur",
@@ -295,18 +314,11 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
 
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
-
     setUploading(true);
     try {
-      // Simulation upload
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const newImage = {
-        id: Date.now().toString(),
-        filename: files[0].name,
-        url: URL.createObjectURL(files[0]),
-        createdAt: new Date().toISOString()
-      };
-      setImages(prev => [newImage, ...prev]);
+      const file = files[0];
+      const res = await gallerieService.uploadImage(file);
+      setImages(prev => [res.data || res, ...prev]);
       toast({
         title: "Succès",
         description: "Image ajoutée avec succès",
@@ -324,17 +336,15 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
 
   const handleSubmitAnswer = async () => {
     if (!answer.trim() || !questionDuJour) return;
-
+    setLoadingReponse(true);
     try {
-      setReponseExistante({
-        _id: "temp",
-        question: questionDuJour._id,
+      const res = await questionService.soumettreReponse({
+        questionId: questionDuJour._id,
         texte: answer,
-        dateReponse: new Date().toISOString()
       });
+      setReponseExistante(res.data || res);
       setAnswer("");
       setShowAnswerField(false);
-      
       toast({
         title: "Réponse enregistrée",
         description: "Merci pour votre réponse !",
@@ -345,6 +355,8 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         description: "Impossible d'enregistrer la réponse",
         variant: "destructive",
       });
+    } finally {
+      setLoadingReponse(false);
     }
   };
 
