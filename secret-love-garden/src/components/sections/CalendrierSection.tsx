@@ -303,7 +303,7 @@ const CalendrierSection = ({ currentUser, partenaire, isMobile, toast }) => {
   const days = getDaysInMonth(currentDate);
   const prochainEvenement = evenements
     .filter(evt => new Date(evt.dateTime) > new Date())
-    .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))[0];
+    .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())[0];
 
   return (
     <Card className="shadow-sm border border-pink-200">

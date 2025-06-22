@@ -163,7 +163,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       case "gallery":
         return <GalerieSection {...commonProps} toast={toastForGalerieSection} />;
       case "questions":
-        return <QuestionsSection {...commonProps} toast={toastForQuestionsSection} />;
+        return <QuestionsSection {...commonProps} toast={toastForGalerieSection} />;
       case "objectifs":
         return <ObjectifsSection {...commonProps} />;
       case "messages":
