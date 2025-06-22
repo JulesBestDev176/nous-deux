@@ -22,48 +22,37 @@ const App = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   
   useEffect(() => {
-    const initialiserSession = async () => {
+    // 1. Toujours restaurer l'utilisateur local immédiatement
+    const savedUser = authService.getCurrentUser();
+    const token = localStorage.getItem('token');
+    if (savedUser && token) {
+      setCurrentUser(savedUser);
+      setIsAuthenticated(true);
+      setIsLoading(false); // On arrête le loading tout de suite
+    } else {
+      setIsLoading(false); // Même si pas d'utilisateur, on arrête le loading
+    }
+
+    // 2. Vérifier la session serveur en arrière-plan (sans bloquer l'UI)
+    const verifier = async () => {
       try {
-        // 1. Vérifier s'il y a des données de session locales
-        const savedUser = authService.getCurrentUser();
-        const token = localStorage.getItem('token');
-        
-        if (savedUser && token) {
-          // Si on a des données locales, on les utilise immédiatement
-          setCurrentUser(savedUser);
+        const sessionData = await authService.verifierSession();
+        if (sessionData.success && sessionData.user) {
+          setCurrentUser(sessionData.user);
           setIsAuthenticated(true);
-          console.log("Session restaurée depuis le localStorage:", savedUser.nom);
-        }
-        
-        // 2. Vérifier la session avec le serveur (en arrière-plan)
-        try {
-          const sessionData = await authService.verifierSession();
-          if (sessionData.success && sessionData.user) {
-            // Mettre à jour avec les données du serveur si elles sont plus récentes
-            setCurrentUser(sessionData.user);
-            setIsAuthenticated(true);
-            console.log("Session vérifiée avec le serveur:", sessionData.user.nom);
-          }
-        } catch (serverError) {
-          console.log("Erreur serveur, utilisation des données locales:", serverError.message);
-          // En cas d'erreur serveur, on garde les données locales
-          if (!savedUser) {
-            // Seulement déconnecter si on n'a pas de données locales
-            setIsAuthenticated(false);
-            setCurrentUser(null);
-          }
+        } else {
+          // Token invalide ou expiré
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       } catch (error) {
-        console.error("Erreur lors de l'initialisation de la session:", error);
-        // En cas d'erreur générale, on déconnecte
-        setIsAuthenticated(false);
-        setCurrentUser(null);
-      } finally {
-        setIsLoading(false);
+        // En cas d'erreur réseau, on garde l'utilisateur local
+        console.log("Erreur serveur, on reste en mode local:", error.message);
       }
     };
-
-    initialiserSession();
+    if (token) verifier();
   }, []);
 
   const handleLogin = (user) => {
