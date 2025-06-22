@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import gallerieService from "@/services/gallerie.service";
 import authService from "@/services/auth.service";
 import questionService from "@/services/questions.service";
+import { useNavigate } from "react-router-dom";
 
 // Hook pour détecter mobile
 const MOBILE_BREAKPOINT = 768;
@@ -251,6 +252,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const menuItems = [
     { id: "gallery", label: "Galerie d'amour", icon: Camera },
@@ -388,6 +390,20 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
     setCurrentImageIndex(0);
   };
 
+  const handleLogoutClick = async () => {
+    await onLogout();
+    // Nettoyer tous les états liés à l'utilisateur
+    setAnswer("");
+    setOldCode("");
+    setNewCode("");
+    setImages([]);
+    setQuestionDuJour(null);
+    setReponseExistante(null);
+    setQuestionsPersonnalisees([]);
+    // Rediriger vers la page de connexion
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 to-rose-100">
       {/* Header responsive */}
@@ -416,7 +432,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
           </div>
           
           {!isMobile && (
-            <Button variant="outline" size="sm" onClick={onLogout}>
+            <Button variant="outline" size="sm" onClick={handleLogoutClick}>
               <LogOut className="w-4 h-4 mr-2" />
               Déconnexion
             </Button>
@@ -432,7 +448,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         activeSection={activeSection}
         setActiveSection={setActiveSection}
         currentUser={currentUser}
-        onLogout={onLogout}
+        onLogout={handleLogoutClick}
       />
 
       <div className={`max-w-6xl mx-auto p-4 ${isMobile ? '' : 'flex gap-6'}`}>
