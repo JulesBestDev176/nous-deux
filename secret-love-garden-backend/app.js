@@ -96,6 +96,13 @@ app.use('/api/gallerie', require('./routes/gallerie'));
 app.use('/api/histoire', require('./routes/histoire'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/rappel', require('./routes/rappel'));
+app.use('/api/calendrier', require('./routes/calendrier'));
+app.use('/api/jeu', require('./routes/jeu'));
+app.use('/api/message', require('./routes/message'));
+app.use('/api/objectif', require('./routes/objectif'));
+app.use('/api/profil', require('./routes/profil'));
+app.use('/api/statistique', require('./routes/statistique'));
+app.use('/api/voyage', require('./routes/voyage'));
 
 // Gestion 404
 app.use((req, res, next) => {
