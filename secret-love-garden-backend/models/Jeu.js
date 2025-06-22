@@ -1,17 +1,19 @@
-// models/Jeu.js
 const mongoose = require('mongoose');
 
 const partieSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['quiz', 'defi', 'compatibilite'],
+    enum: ['quiz', 'defi', 'compatibilite', 'quiz-couple', 'dilemmes', 'plus-probable'],
     required: true
   },
   questions: [{
-    question: String,
+    question: {
+      type: String,
+      required: true
+    },
     reponseUtilisateur1: String,
     reponseUtilisateur2: String,
-    reponseCorrecte: String,
+    reponseCorrecte: String, // Peut être utilisé pour des quiz plus complexes
     points: {
       type: Number,
       default: 0
@@ -21,7 +23,8 @@ const partieSchema = new mongoose.Schema({
     utilisateur1: {
       utilisateur: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Utilisateur'
+        ref: 'Utilisateur',
+        required: true
       },
       score: {
         type: Number,
@@ -31,7 +34,8 @@ const partieSchema = new mongoose.Schema({
     utilisateur2: {
       utilisateur: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Utilisateur'
+        ref: 'Utilisateur',
+        required: true
       },
       score: {
         type: Number,
@@ -55,4 +59,11 @@ const partieSchema = new mongoose.Schema({
   },
   dateFin: Date
 });
+
+// Index pour améliorer les performances des requêtes
+partieSchema.index({ 'scores.utilisateur1.utilisateur': 1 });
+partieSchema.index({ 'scores.utilisateur2.utilisateur': 1 });
+partieSchema.index({ statut: 1 });
+partieSchema.index({ dateCreation: -1 });
+
 module.exports = mongoose.model('Jeu', partieSchema);
