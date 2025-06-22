@@ -306,7 +306,7 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
     // 2. Récupérer toutes les questions qui ont au moins une réponse de l'un des deux partenaires
     const questionsAvecReponses = await Question.aggregate([
       {
-        // Étape 1: Faire un lookup pour récupérer toutes les réponses
+        // Étape 1: Joindre les réponses
         $lookup: {
           from: 'reponses',
           localField: '_id',
@@ -315,82 +315,77 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
         }
       },
       {
-        // Étape 2: Filtrer les questions qui ont au moins une réponse d'un des partenaires
+        // Étape 2: Filtrer les questions qui ont une réponse du couple
         $match: {
-          'toutesReponses.utilisateur': { 
-            $in: [utilisateurId, partenaireId] 
-          }
+          'toutesReponses.utilisateur': { $in: [utilisateurId, partenaireId] }
         }
       },
       {
-        // Étape 3: Filtrer uniquement les réponses des deux partenaires
+        // Étape 3: Créer un champ avec seulement les réponses du couple
         $addFields: {
-          reponsesCouple: {
+          reponses: {
             $filter: {
               input: '$toutesReponses',
               as: 'reponse',
-              cond: {
-                $in: ['$$reponse.utilisateur', [utilisateurId, partenaireId]]
-              }
+              cond: { $in: ['$$reponse.utilisateur', [utilisateurId, partenaireId]] }
             }
           }
         }
       },
+      // === DEBUT DE LA NOUVELLE LOGIQUE DE POPULATION ===
       {
-        // Étape 4: Populer les informations des utilisateurs
+        // Étape 4: Déconstruire le tableau des réponses pour traiter chaque réponse
+        $unwind: '$reponses'
+      },
+      {
+        // Étape 5: "Populer" l'utilisateur de chaque réponse
         $lookup: {
           from: 'utilisateurs',
-          localField: 'reponsesCouple.utilisateur',
+          localField: 'reponses.utilisateur',
           foreignField: '_id',
-          as: 'utilisateursInfo'
+          as: 'reponses.utilisateur'
         }
       },
       {
-        // Étape 5: Restructurer les données pour le frontend
-        $project: {
-          question: {
-            _id: '$_id',
-            texte: '$texte',
-            categorie: '$categorie',
-            dateCreation: '$dateCreation'
-          },
-          reponses: {
-            $map: {
-              input: '$reponsesCouple',
-              as: 'reponse',
-              in: {
-                _id: '$$reponse._id',
-                texte: '$$reponse.texte',
-                dateReponse: '$$reponse.dateReponse',
-                utilisateur: {
-                  $let: {
-                    vars: {
-                      user: {
-                        $arrayElemAt: [
-                          {
-                            $filter: {
-                              input: '$utilisateursInfo',
-                              as: 'user',
-                              cond: { $eq: ['$$user._id', '$$reponse.utilisateur'] }
-                            }
-                          },
-                          0
-                        ]
-                      }
-                    },
-                    in: {
-                      _id: '$$user._id',
-                      nom: '$$user.nom'
-                    }
-                  }
-                }
-              }
-            }
+        // Étape 6: Remplacer le tableau utilisateur par le premier objet (et unique)
+        $addFields: {
+          'reponses.utilisateur': { $arrayElemAt: ['$reponses.utilisateur', 0] }
+        }
+      },
+      {
+        // Étape 7: Regrouper par question pour reformer les documents
+        $group: {
+          _id: '$_id',
+          doc: { $first: '$$ROOT' },
+          reponses: { $push: '$reponses' }
+        }
+      },
+      {
+        // Étape 8: Remodeler le document final
+        $replaceRoot: {
+          newRoot: {
+            question: {
+              _id: '$doc._id',
+              texte: '$doc.texte',
+              categorie: '$doc.categorie',
+              dateCreation: '$doc.dateCreation'
+            },
+            reponses: '$reponses'
           }
         }
       },
+       {
+        // Étape 9: Retirer les champs sensibles de l'utilisateur
+        $project: {
+          'reponses.utilisateur.motDePasse': 0,
+          'reponses.utilisateur.email': 0,
+          'reponses.utilisateur.partenaire': 0,
+          'reponses.utilisateur.dateCreation': 0,
+          'reponses.utilisateur.__v': 0,
+        }
+      },
       {
-        // Étape 6: Trier par date de création de la question (plus récent en premier)
+        // Étape 10: Trier par date de création de la question
         $sort: { 'question.dateCreation': -1 }
       }
     ]);
