@@ -349,7 +349,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
             <Card key={image._id} className="overflow-hidden hover:shadow-lg transition-shadow border-pink-100">
               <div className="aspect-square relative">
                 <img
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${image.url}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${image.url}`}
                   alt={image.legende || "Souvenir"}
                   className="w-full h-full object-cover"
                 />

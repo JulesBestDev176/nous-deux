@@ -74,11 +74,25 @@ const getQuestionsPersonnalisees = async () => {
   }
 };
 
+const getReponsesPartenaire = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/questions/reponses-partenaire`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des réponses du partenaire:', error);
+    throw error.response.data;
+  }
+};
+
 export default {
   getQuestionDuJour,
   soumettreReponse,
   ajouterQuestion,
   getReponseUtilisateur,
   getReponsesUtilisateur,
-  getQuestionsPersonnalisees
+  getQuestionsPersonnalisees,
+  getReponsesPartenaire
 };

@@ -32,45 +32,26 @@ const PartnerAnswersSection = ({ currentUser, partenaire, isMobile, toast }) => 
   }, []);
 
   const fetchReponsesPartenaire = async () => {
+    setLoading(true);
     try {
-      // Récupérer toutes les questions avec leurs réponses
-      const [questionsQuotidiennes, questionsPersonnalisees] = await Promise.all([
-        questionService.getQuestionsAvecReponses(),
-        questionService.getQuestionsPersonnalisees()
-      ]);
+      const res = await questionService.getReponsesPartenaire();
+      
+      const reponsesFormatees = (res.data || res).map(reponse => ({
+        id: reponse._id,
+        questionId: reponse.question._id,
+        questionTexte: reponse.question.texte,
+        questionType: reponse.question.type,
+        reponseTexte: reponse.texte,
+        dateReponse: reponse.dateReponse,
+        lu: reponse.lu || false,
+      }));
 
-      const toutesQuestions = [
-        ...(questionsQuotidiennes.data || questionsQuotidiennes || []),
-        ...(questionsPersonnalisees.data || questionsPersonnalisees || [])
-      ];
+      setReponsesPartenaire(reponsesFormatees);
 
-      // Extraire les réponses du partenaire
-      const reponses = [];
-      toutesQuestions.forEach(question => {
-        if (question.reponses && question.reponses.length > 0) {
-          question.reponses.forEach(reponse => {
-            if (reponse.auteur?.nom !== currentUser) {
-              reponses.push({
-                id: `${question._id}-${reponse._id || reponse.dateReponse}`,
-                questionId: question._id,
-                questionTexte: question.texte,
-                questionType: question.type || 'quotidienne',
-                questionCategorie: question.categorie || 'relation',
-                reponseTexte: reponse.texte,
-                dateReponse: reponse.dateReponse,
-                auteur: reponse.auteur,
-                lu: reponse.lu || false
-              });
-            }
-          });
-        }
-      });
-
-      setReponsesPartenaire(reponses);
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Impossible de charger les réponses",
+        description: "Impossible de charger les réponses du partenaire",
         variant: "destructive",
       });
     } finally {
