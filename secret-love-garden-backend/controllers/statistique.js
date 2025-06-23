@@ -201,7 +201,7 @@ exports.getStatistiquesGenerales = async (req, res) => {
     const partenaireId = utilisateurConnecte.partenaire;
     const coupleIds = [utilisateurConnecte._id, partenaireId];
 
-    const totalMessages = await Message.countDocuments({ createur: { $in: coupleIds } });
+    const totalMessages = await Message.countDocuments({ expediteur: { $in: coupleIds } });
     const totalPhotos = await Gallerie.countDocuments({ createur: { $in: coupleIds } });
     const totalEvenements = await Evenement.countDocuments({ createur: { $in: coupleIds } });
 
