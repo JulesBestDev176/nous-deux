@@ -116,8 +116,8 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       console.log('👤 DEBUG - user localStorage:', user, '| currentUser prop:', currentUser, '| monId:', monId);
 
       // Organiser les données par question avec les réponses de chaque partenaire
-      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }, idx: number) => {
-        console.log(`\n🔍 [Q${idx}] Question historique:`, item);
+      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: any, idx: number) => {
+        // item = { _id, texte, categorie, createur, dateProgrammation, dateCreation, reponses: [...] }
         let reponsesValides = [];
         if (item.reponses && item.reponses.length > 0) {
           item.reponses.forEach((r: Reponse, ridx: number) => {
@@ -138,15 +138,22 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         // Trouver ma réponse et celle de mon partenaire par ID (plus fiable que le nom)
         const maReponse = reponsesValides.find((r: Reponse) =>
           ((r.utilisateur && (r.utilisateur._id || r.utilisateur)) === monId) &&
-          (String(r.question?._id || r.question) === String(item.question._id))
+          (String(r.question?._id || r.question) === String(item._id))
         );
         const reponsePartenaire = reponsesValides.find((r: Reponse) =>
           (partenaire && (r.utilisateur && (r.utilisateur._id || r.utilisateur)) === partenaire._id) &&
-          (String(r.question?._id || r.question) === String(item.question._id))
+          (String(r.question?._id || r.question) === String(item._id))
         );
         console.log(`    [Q${idx}] Résultat mapping: maReponse=`, maReponse ? maReponse.texte : 'Aucune', '| reponsePartenaire=', reponsePartenaire ? reponsePartenaire.texte : 'Aucune');
         return {
-          question: item.question,
+          question: {
+            _id: item._id,
+            texte: item.texte,
+            categorie: item.categorie,
+            createur: item.createur,
+            dateProgrammation: item.dateProgrammation,
+            dateCreation: item.dateCreation,
+          },
           maReponse,
           reponsePartenaire
         };

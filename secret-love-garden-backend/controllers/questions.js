@@ -277,8 +277,8 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
     }
     const partenaireId = utilisateurConnecte.partenaire;
 
-    // 1. Récupérer toutes les questions personnalisées, avec leur créateur
-    const questions = await Question.find({ categorie: 'utilisateur' })
+    // 1. Récupérer toutes les questions personnalisées ET système, avec leur créateur
+    const questions = await Question.find({ categorie: { $in: ['utilisateur', 'systeme'] } })
       .populate('createur', 'nom')
       .sort({ dateCreation: -1 })
       .lean();
