@@ -176,6 +176,30 @@
       "needsCorrection": true,
       "minQuestions": 6,
       "maxQuestions": 8
+    },
+    {
+      "id": "qui-de-nous-deux",
+      "nom": "Qui de nous deux ?",
+      "description": "Terminez les phrases et comparez vos réponses.",
+      "icon": "MessageSquare",
+      "color": "green",
+      "difficulte": "Facile",
+      "duree": "10 min",
+      "needsCorrection": true,
+      "minQuestions": 5,
+      "maxQuestions": 15
+    },
+    {
+      "id": "complete-la-phrase",
+      "nom": "Complete la phrase",
+      "description": "Terminez les phrases et comparez vos réponses.",
+      "icon": "MessageSquare",
+      "color": "green",
+      "difficulte": "Facile",
+      "duree": "10 min",
+      "needsCorrection": true,
+      "minQuestions": 5,
+      "maxQuestions": 10
     }
   ],
   "questions": {

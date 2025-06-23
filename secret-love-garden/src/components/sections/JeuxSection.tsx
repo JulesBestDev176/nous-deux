@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,124 +9,413 @@ import {
   MessageSquare, AlertCircle, Crown, Clock, Eye, ThumbsUp, ThumbsDown,
   ClipboardCheck, User, UserCheck, Lightbulb, Key, Smile
 } from "lucide-react";
-import jeuService from "@/services/jeu.service";
+import jeuService from '@/services/jeu.service';
 
-const jeuxData = {
-  jeux: [],
-  defis: []
+// Types TypeScript
+interface CurrentUser {
+  id: string;
+  nom: string;
+}
+
+interface Partenaire {
+  id: string;
+  nom: string;
+}
+
+interface SubQuiz {
+  id: string;
+  nom: string;
+  description: string;
+  difficulte: string;
+  duree: string;
+  maxQuestions: number;
+}
+
+interface JeuDisponible {
+  id: string;
+  nom: string;
+  description: string;
+  icon: string;
+  color: string;
+  difficulte: string;
+  duree: string;
+  needsCorrection: boolean;
+  hasSubQuizzes?: boolean;
+  subQuizzes?: SubQuiz[];
+  minQuestions?: number;
+  maxQuestions?: number;
+}
+
+interface Question {
+  questionText: string;
+  sujet?: string;
+  devineur?: string;
+  reponseSujet?: string;
+  reponseDevineur?: string;
+  reponduParSujet?: boolean;
+  reponduParDevineur?: boolean;
+  estCorrect?: boolean | null;
+  corrigePar?: string;
+  points?: number;
+  optionA?: string;
+  optionB?: string;
+  reponseUtilisateur1?: string;
+  reponseUtilisateur2?: string;
+  reponduParUtilisateur1?: boolean;
+  reponduParUtilisateur2?: boolean;
+}
+
+interface Partie {
+  _id: string;
+  type: string;
+  statut: string;
+  questions?: Question[];
+  questionsSimples?: Question[];
+  scores: {
+    utilisateur1: { utilisateur: { id: string; nom: string }; score: number };
+    utilisateur2: { utilisateur: { id: string; nom: string }; score: number };
+  };
+  tourActuel: string;
+  dateCreation?: Date;
+  dateFin?: Date;
+}
+
+interface Defi {
+  id: string;
+  titre: string;
+  description: string;
+  points: number;
+  difficulte: string;
+  categorie: string;
+  icon: string;
+  termine?: boolean;
+  dateTermine?: Date;
+}
+
+interface Toast {
+  title: string;
+  description: string;
+  variant?: string;
+}
+
+interface JeuxSectionProps {
+  currentUser: CurrentUser;
+  partenaire: Partenaire;
+  isMobile: boolean;
+  toast: (toast: Toast) => void;
+}
+
+const iconMap: Record<string, React.ComponentType<unknown>> = {
+  BrainCircuit,
+  GitCompareArrows,
+  Users,
+  Heart,
+  MessageSquare,
+  Camera,
+  Lightbulb,
+  Smile,
+  Zap,
+  Key
 };
 
-const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
-  const [jeuxDisponibles, setJeuxDisponibles] = useState([]);
-  const [historiqueParties, setHistoriqueParties] = useState([]);
-  const [defisCouple, setDefisCouple] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('jeux');
-  const [partieEnCours, setPartieEnCours] = useState(null);
-  const [questionActuelle, setQuestionActuelle] = useState(0);
-  const [reponseInput, setReponseInput] = useState('');
-  const [showDefis, setShowDefis] = useState(false);
-  const [defiEnCours, setDefiEnCours] = useState(null);
-  const [showQuizSelection, setShowQuizSelection] = useState(false);
-  const [selectedQuizType, setSelectedQuizType] = useState(null);
+const getQuestionsACorreger = (partie: Partie, currentUser: CurrentUser): Question[] => {
+  if (!partie.questions) return [];
+  return partie.questions.filter((q) => 
+    q.sujet === currentUser.id && 
+    q.reponduParSujet && 
+    q.reponduParDevineur && 
+    !q.corrigePar
+  );
+};
+
+interface InterfaceJeuProps {
+  partieEnCours: Partie;
+  currentUser: CurrentUser;
+  partenaire: Partenaire;
+  isMobile: boolean;
+  jeuxDisponibles: JeuDisponible[];
+  questionActuelle: number;
+  vueCorrection: boolean;
+  setVueCorrection: (value: boolean) => void;
+  reponseInput: string;
+  setReponseInput: (value: string) => void;
+  soumettreReponse: () => Promise<void>;
+  corrigerReponse: (index: number, correct: boolean) => Promise<void>;
+  setPartieEnCours: (partie: Partie | null) => void;
+  isSubmitting: boolean;
+}
+
+const InterfaceJeu: React.FC<InterfaceJeuProps> = ({
+  partieEnCours,
+  currentUser,
+  partenaire,
+  isMobile,
+  jeuxDisponibles,
+  questionActuelle,
+  vueCorrection,
+  setVueCorrection,
+  reponseInput,
+  setReponseInput,
+  soumettreReponse,
+  corrigerReponse,
+  setPartieEnCours,
+  isSubmitting
+}) => {
+  const jeuConfig = jeuxDisponibles.find(j => j.id === partieEnCours.type);
+  
+  const questionsActuelles = partieEnCours.questions && partieEnCours.questions.length > 0 
+    ? partieEnCours.questions 
+    : partieEnCours.questionsSimples;
+    
+  const question = questionsActuelles?.[questionActuelle];
+  const isCorrectionGame = !!(question && 'sujet' in question);
+
+  const progress = questionsActuelles ? ((questionActuelle + 1) / questionsActuelles.length) * 100 : 0;
+  
+  let aRepondu = false;
+  let partenaireARepondu = false;
+  let maReponse: string | undefined = '';
+
+  if (isCorrectionGame && question) {
+    const estSujet = question.sujet === currentUser.id;
+    const estDevineur = question.devineur === currentUser.id;
+    
+    aRepondu = (estSujet && !!question.reponduParSujet) || (estDevineur && !!question.reponduParDevineur);
+    partenaireARepondu = (estSujet && !!question.reponduParDevineur) || (estDevineur && !!question.reponduParSujet);
+    maReponse = estSujet ? question.reponseSujet : question.reponseDevineur;
+  } else if (question) {
+    const estUtilisateur1 = partieEnCours.scores.utilisateur1.utilisateur.id === currentUser.id;
+    aRepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur1 : question.reponduParUtilisateur2);
+    partenaireARepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur2 : question.reponduParUtilisateur1);
+    maReponse = estUtilisateur1 ? question.reponseUtilisateur1 : question.reponseUtilisateur2;
+  }
+
+  const IconComponent = iconMap[jeuConfig?.icon || 'Gamepad2'] || Gamepad2;
+  const questionsACorriger = getQuestionsACorreger(partieEnCours, currentUser);
+
+  return (
+    <div className="space-y-6">
+      {/* Sélecteur de vue pour les jeux avec correction */}
+      {isCorrectionGame && (
+        <div className={`flex mb-4 ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+          <Button
+            variant={!vueCorrection ? 'default' : 'outline'}
+            onClick={() => setVueCorrection(false)}
+            className={`${!vueCorrection ? 'bg-blue-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''}`}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Jouer ({questionsActuelles?.length || 0} questions)
+          </Button>
+          <Button
+            variant={vueCorrection ? 'default' : 'outline'}
+            onClick={() => setVueCorrection(true)}
+            className={`${vueCorrection ? 'bg-orange-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''} relative`}
+          >
+            <ClipboardCheck className="w-4 h-4 mr-2" />
+            Correction ({questionsACorriger.length})
+            {questionsACorriger.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {questionsACorriger.length}
+              </span>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {!vueCorrection ? (
+        // VUE NORMALE DU JEU
+        <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+          {/* Interface du jeu normale */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-blue-800 flex items-center">
+                <IconComponent className="w-6 h-6 mr-2" />
+                {jeuConfig?.nom}
+              </h3>
+              <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                {questionActuelle + 1}/{questionsActuelles?.length || 0}
+              </span>
+            </div>
+            
+            {/* Barre de progression */}
+            <div className="w-full bg-blue-200 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Question et réponse */}
+          {question && (
+            <div className="mb-6">
+              <div className="bg-white p-4 rounded-lg border border-blue-200 mb-4">
+                <h4 className="font-medium text-gray-800 mb-2 text-lg">
+                  {question.questionText}
+                </h4>
+                
+                {/* Interface de réponse */}
+                {!aRepondu ? (
+                  <div className="space-y-3">
+                    <Input
+                      value={reponseInput}
+                      onChange={(e) => setReponseInput(e.target.value)}
+                      placeholder="Votre réponse..."
+                      className="border-blue-200 focus:border-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && reponseInput.trim()) {
+                          soumettreReponse();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={soumettreReponse}
+                      disabled={!reponseInput.trim() || isSubmitting}
+                      className="w-full bg-blue-500 hover:bg-blue-600"
+                    >
+                      Valider ma réponse
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-sm">
+                    <div className="bg-gray-100 p-3 rounded-lg border border-gray-200">
+                        <strong className="text-gray-700">Votre réponse :</strong>
+                        <p className="text-gray-600 mt-1">{maReponse}</p>
+                    </div>
+                    {!partenaireARepondu ? (
+                        <div className="bg-yellow-100 p-3 rounded-lg border border-yellow-200 flex items-center">
+                            <Clock className="w-4 h-4 mr-2 text-yellow-600" />
+                            <p className="text-yellow-700">En attente de la réponse de {partenaire.nom}...</p>
+                        </div>
+                    ) : (
+                      <div className="bg-green-100 p-3 rounded-lg border border-green-200 flex items-center">
+                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                          <p className="text-green-700">{partenaire.nom} a aussi répondu !</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Contrôles */}
+          <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
+            <Button
+              variant="ghost"
+              onClick={() => setPartieEnCours(null)}
+              className="text-blue-600"
+            >
+              Quitter la partie
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        // VUE CORRECTION
+        <div className="space-y-6">
+          {/* Section : Questions à corriger */}
+          <Card className="p-6 border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50">
+            <h3 className="font-semibold text-orange-800 mb-4 flex items-center">
+              <ClipboardCheck className="w-6 h-6 mr-2" />
+              Réponses de {partenaire.nom} à corriger ({questionsACorriger.length})
+            </h3>
+            
+            {questionsACorriger.length > 0 ? (
+              <div className="space-y-4">
+                {questionsACorriger.map((q) => {
+                  const realIndex = partieEnCours.questions?.findIndex(question => question === q) || 0;
+                  return (
+                    <div key={realIndex} className="bg-white p-4 rounded-lg border border-orange-200">
+                      <div className="mb-3">
+                        <h5 className="font-medium text-gray-800 mb-2">
+                          Question : {q.questionText}
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="bg-green-50 p-3 rounded border border-green-200">
+                            <strong className="text-green-800">Votre vraie réponse :</strong>
+                            <p className="text-green-700 mt-1">{q.reponseSujet}</p>
+                          </div>
+                          <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                            <strong className="text-blue-800">Devinette de {partenaire.nom} :</strong>
+                            <p className="text-blue-700 mt-1">{q.reponseDevineur}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => corrigerReponse(realIndex, true)}
+                          className="bg-green-500 hover:bg-green-600 flex-1"
+                        >
+                          <ThumbsUp className="w-4 h-4 mr-2" />
+                          Correct ! (+{q.points || 10} pts)
+                        </Button>
+                        <Button
+                          onClick={() => corrigerReponse(realIndex, false)}
+                          className="bg-red-500 hover:bg-red-600 flex-1"
+                        >
+                          <ThumbsDown className="w-4 h-4 mr-2" />
+                          Incorrect (0 pt)
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-orange-600">
+                <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Aucune réponse à corriger pour le moment</p>
+                <p className="text-sm mt-2">Les réponses apparaîtront ici quand votre partenaire aura joué</p>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMobile, toast }) => {
+  const [jeuxDisponibles, setJeuxDisponibles] = useState<JeuDisponible[]>([]);
+  const [historiqueParties, setHistoriqueParties] = useState<Partie[]>([]);
+  const [defisCouple, setDefisCouple] = useState<Defi[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('jeux');
+  const [partieEnCours, setPartieEnCours] = useState<Partie | null>(null);
+  const [questionActuelle, setQuestionActuelle] = useState<number>(0);
+  const [reponseInput, setReponseInput] = useState<string>('');
+  const [showDefis, setShowDefis] = useState<boolean>(false);
+  const [defiEnCours, setDefiEnCours] = useState<Defi | null>(null);
+  const [showQuizSelection, setShowQuizSelection] = useState<boolean>(false);
+  const [selectedQuizType, setSelectedQuizType] = useState<string | null>(null);
   const [preuveDefi, setPreuveDefi] = useState({
     commentaire: '',
-    images: []
+    images: [] as File[]
   });
-  const [vueCorrection, setVueCorrection] = useState(false);
-  const [refreshPartie, setRefreshPartie] = useState(0);
+  const [vueCorrection, setVueCorrection] = useState<boolean>(false);
+  const [refreshPartie, setRefreshPartie] = useState<number>(0);
+  const [quizTermine, setQuizTermine] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Mapping des icônes
-  const iconMap = {
-    BrainCircuit,
-    GitCompareArrows,
-    Users,
-    Heart,
-    MessageSquare,
-    Camera,
-    Lightbulb,
-    Smile,
-    Zap,
-    Key
-  };
-
-  // Services API utilisant le backend
-  // const fetchJeuxDisponibles = async () => {
-  //   try {
-  //     const res = await jeuService.getJeuxDisponibles();
-  //     setJeuxDisponibles(res.data || []);
-  //   } catch (error) {
-  //     console.error('Erreur chargement jeux:', error);
-  //     toast({
-  //       title: "Erreur",
-  //       description: "Impossible de charger les jeux",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const fetchHistoriqueParties = async () => {
-  //   try {
-  //     const res = await jeuService.getHistoriqueParties();
-  //     setHistoriqueParties(res.data || []);
-  //   } catch (error) {
-  //     console.log("Erreur chargement historique");
-  //   }
-  // };
-
-  // const fetchDefisCouple = async () => {
-  //   try {
-  //     const res = await jeuService.getDeffisCouple();
-  //     setDefisCouple(res.data || []);
-  //   } catch (error) {
-  //     console.error('Erreur chargement défis:', error);
-  //   }
-  // };
-
-  useEffect(() => {
-    fetchJeuxDisponibles();
-    fetchHistoriqueParties();
-    fetchDefisCouple();
-  }, []);
-
-  useEffect(() => {
-    if (partieEnCours && partieEnCours._id) {
-      const interval = setInterval(() => {
-        refreshPartieData();
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [partieEnCours]);
-
-  useEffect(() => {
-    fetchJeuxDisponibles();
-    fetchHistoriqueParties();
-    fetchDefisCouple();
-  }, []);
-
-  useEffect(() => {
-    if (partieEnCours && partieEnCours._id) {
-      const interval = setInterval(() => {
-        refreshPartieData();
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [partieEnCours]);
-
-  const fetchJeuxDisponibles = async () => {
+  // Fonctions API
+  const fetchJeuxDisponibles = async (): Promise<void> => {
     try {
       const res = await jeuService.getJeuxDisponibles();
-      setJeuxDisponibles(res.data);
+      setJeuxDisponibles(res.data || []);
     } catch (error) {
-      setJeuxDisponibles(jeuxData.jeux);
+      console.error('Erreur chargement jeux:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les jeux",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchHistoriqueParties = async () => {
+  const fetchHistoriqueParties = async (): Promise<void> => {
     try {
       const res = await jeuService.getHistoriqueParties();
       setHistoriqueParties(res.data || []);
@@ -135,16 +424,31 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     }
   };
 
-  const fetchDefisCouple = async () => {
+  const fetchDefisCouple = async (): Promise<void> => {
     try {
       const res = await jeuService.getDeffisCouple();
-      setDefisCouple(res.data || jeuxData.defis);
+      setDefisCouple(res.data || []);
     } catch (error) {
-      setDefisCouple(jeuxData.defis);
+      console.error('Erreur chargement défis:', error);
     }
   };
 
-  const refreshPartieData = async () => {
+  useEffect(() => {
+    fetchJeuxDisponibles();
+    fetchHistoriqueParties();
+    fetchDefisCouple();
+  }, []);
+
+  useEffect(() => {
+    if (partieEnCours && partieEnCours._id) {
+      const interval = setInterval(() => {
+        refreshPartieData();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [partieEnCours]);
+
+  const refreshPartieData = async (): Promise<void> => {
     if (!partieEnCours?._id) return;
     
     try {
@@ -156,7 +460,7 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     }
   };
 
-  const demarrerPartie = async (typeJeu, subQuizId = null) => {
+  const demarrerPartie = async (typeJeu: string, subQuizId?: string): Promise<void> => {
     try {
       // Si c'est un quiz couple, on a besoin de sélectionner un sous-quiz
       if (typeJeu === 'quiz-couple' && !subQuizId) {
@@ -172,59 +476,82 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
       setVueCorrection(false);
       setShowQuizSelection(false);
       
-      const jeuConfig = getJeuConfig(typeJeu);
-      let nomJeu = jeuConfig?.nom;
-      
-      // Si c'est un sous-quiz, récupérer le nom spécifique
-      if (subQuizId && jeuConfig?.subQuizzes) {
-        const subQuiz = jeuConfig.subQuizzes.find(sq => sq.id === subQuizId);
-        nomJeu = subQuiz?.nom || nomJeu;
+      // Trouver le nom du jeu pour la notification
+      let nomJeu = 'Jeu';
+      const jeuConfig = jeuxDisponibles.find(j => j.id === typeJeu);
+      if (jeuConfig) {
+        if (subQuizId && jeuConfig.subQuizzes) {
+          const subQuiz = jeuConfig.subQuizzes.find(sq => sq.id === subQuizId);
+          nomJeu = subQuiz?.nom || jeuConfig.nom;
+        } else {
+          nomJeu = jeuConfig.nom;
+        }
       }
       
       toast({
         title: "Partie démarrée !",
         description: `${nomJeu} a commencé`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Erreur démarrage partie:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de démarrer la partie",
+        description: error instanceof Error ? error.message : "Impossible de démarrer la partie",
         variant: "destructive",
       });
     }
   };
 
-  const soumettreReponse = async () => {
-    if (!reponseInput.trim() || !partieEnCours) return;
-    
+  const soumettreReponse = async (): Promise<void> => {
+    if (!reponseInput.trim() || !partieEnCours || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await jeuService.soumettreReponse(
         partieEnCours._id,
         questionActuelle,
         reponseInput.trim()
       );
-      
       setPartieEnCours(res.data);
       setReponseInput('');
+
+      // Passage automatique à la question suivante
+      const questionsActuelles = (res.data.questions && res.data.questions.length > 0)
+        ? res.data.questions
+        : res.data.questionsSimples;
+      if (questionActuelle < questionsActuelles.length - 1) {
+        setQuestionActuelle(q => q + 1);
+      } else {
+        setQuizTermine(true);
+      }
+      setVueCorrection(false);
+      setShowQuizSelection(false);
+      setIsSubmitting(false);
       
+      // Trouver le nom du jeu pour la notification
+      let nomJeu = 'Jeu';
+      const jeuConfig = jeuxDisponibles.find(j => j.id === res.data.type);
+      if (jeuConfig) {
+        nomJeu = jeuConfig.nom;
+      }
       toast({
         title: "Réponse envoyée ! ✅",
         description: "En attente de votre partenaire...",
       });
-      
-    } catch (error) {
+    } catch (error: unknown) {
+      setIsSubmitting(false);
+      console.error('Erreur soumission réponse:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de soumettre la réponse",
+        description: error instanceof Error ? error.message : "Impossible de soumettre la réponse",
         variant: "destructive",
       });
     }
   };
 
-  const corrigerReponse = async (indexQuestion, estCorrect) => {
+  const corrigerReponse = async (indexQuestion: number, estCorrect: boolean): Promise<void> => {
     try {
       const res = await jeuService.corrigerReponse(
-        partieEnCours._id,
+        partieEnCours!._id,
         indexQuestion,
         estCorrect
       );
@@ -236,18 +563,19 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
         description: estCorrect ? "Votre partenaire gagne des points !" : "Pas de points cette fois.",
       });
       
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Erreur correction réponse:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de corriger la réponse",
+        description: error instanceof Error ? error.message : "Impossible de corriger la réponse",
         variant: "destructive",
       });
     }
   };
 
-  const terminerPartie = () => {
-    const nouvellePartie = {
-      ...partieEnCours,
+  const terminerPartie = (): void => {
+    const nouvellePartie: Partie = {
+      ...partieEnCours!,
       statut: 'termine',
       dateFin: new Date()
     };
@@ -263,12 +591,12 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     });
   };
 
-  const commencerDefi = (defi) => {
+  const commencerDefi = (defi: Defi): void => {
     setDefiEnCours(defi);
     setPreuveDefi({ commentaire: '', images: [] });
   };
 
-  const terminerDefi = async () => {
+  const terminerDefi = async (): Promise<void> => {
     if (!preuveDefi.commentaire.trim()) {
       toast({
         title: "Commentaire requis",
@@ -279,10 +607,10 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     }
 
     try {
-      await jeuService.completerDefi(defiEnCours.id, preuveDefi);
+      await jeuService.completerDefi(defiEnCours!.id, preuveDefi);
       
       setDefisCouple(prev => prev.map(defi => 
-        defi.id === defiEnCours.id 
+        defi.id === defiEnCours!.id 
           ? { ...defi, termine: true, dateTermine: new Date() }
           : defi
       ));
@@ -292,9 +620,9 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
 
       toast({
         title: "Défi réussi ! 🎉",
-        description: `Vous avez gagné ${defiEnCours.points} points !`,
+        description: `Vous avez gagné ${defiEnCours!.points} points !`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         title: "Erreur",
         description: "Impossible de valider le défi",
@@ -304,10 +632,10 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
   };
 
   // Fonctions pour filtrer les questions selon le statut
-  const getQuestionsACorreger = () => {
+  const getQuestionsACorregerLegacy = (): Question[] => {
     if (!partieEnCours?.questions) return [];
     
-    return partieEnCours.questions.filter((q, index) => 
+    return partieEnCours.questions.filter((q) => 
       q.sujet === currentUser.id && 
       q.reponduParSujet && 
       q.reponduParDevineur && 
@@ -315,10 +643,10 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     );
   };
 
-  const getMesReponsesEnAttente = () => {
+  const getMesReponsesEnAttente = (): Question[] => {
     if (!partieEnCours?.questions) return [];
     
-    return partieEnCours.questions.filter((q, index) => 
+    return partieEnCours.questions.filter((q) => 
       q.devineur === currentUser.id && 
       q.reponduParSujet && 
       q.reponduParDevineur && 
@@ -326,480 +654,7 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
     );
   };
 
-  const JeuCard = ({ jeu }) => {
-    const IconComponent = iconMap[jeu.icon] || Gamepad2;
-    
-    return (
-      <Card className={`p-4 border hover:shadow-lg transition-all duration-200 ${
-        jeu.color === 'blue' ? 'border-blue-200 bg-blue-50 hover:bg-blue-100' :
-        jeu.color === 'purple' ? 'border-purple-200 bg-purple-50 hover:bg-purple-100' :
-        jeu.color === 'green' ? 'border-green-200 bg-green-50 hover:bg-green-100' :
-        jeu.color === 'red' ? 'border-red-200 bg-red-50 hover:bg-red-100' :
-        jeu.color === 'yellow' ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100' :
-        jeu.color === 'orange' ? 'border-orange-200 bg-orange-50 hover:bg-orange-100' :
-        jeu.color === 'teal' ? 'border-teal-200 bg-teal-50 hover:bg-teal-100' :
-        jeu.color === 'pink' ? 'border-pink-200 bg-pink-50 hover:bg-pink-100' :
-        jeu.color === 'indigo' ? 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100' :
-        jeu.color === 'slate' ? 'border-slate-200 bg-slate-50 hover:bg-slate-100' :
-        'border-gray-200 bg-gray-50 hover:bg-gray-100'
-      }`}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <IconComponent className={`w-8 h-8 ${
-              jeu.color === 'blue' ? 'text-blue-600' :
-              jeu.color === 'purple' ? 'text-purple-600' :
-              jeu.color === 'green' ? 'text-green-600' :
-              jeu.color === 'red' ? 'text-red-600' :
-              jeu.color === 'yellow' ? 'text-yellow-600' :
-              jeu.color === 'orange' ? 'text-orange-600' :
-              jeu.color === 'teal' ? 'text-teal-600' :
-              jeu.color === 'pink' ? 'text-pink-600' :
-              jeu.color === 'indigo' ? 'text-indigo-600' :
-              jeu.color === 'slate' ? 'text-slate-600' :
-              'text-gray-600'
-            }`} />
-            <div>
-              <h4 className={`font-medium ${
-                jeu.color === 'blue' ? 'text-blue-800' :
-                jeu.color === 'purple' ? 'text-purple-800' :
-                jeu.color === 'green' ? 'text-green-800' :
-                jeu.color === 'red' ? 'text-red-800' :
-                jeu.color === 'yellow' ? 'text-yellow-800' :
-                jeu.color === 'orange' ? 'text-orange-800' :
-                jeu.color === 'teal' ? 'text-teal-800' :
-                jeu.color === 'pink' ? 'text-pink-800' :
-                jeu.color === 'indigo' ? 'text-indigo-800' :
-                jeu.color === 'slate' ? 'text-slate-800' :
-                'text-gray-800'
-              }`}>{jeu.nom}</h4>
-              <p className={`text-sm ${
-                jeu.color === 'blue' ? 'text-blue-600' :
-                jeu.color === 'purple' ? 'text-purple-600' :
-                jeu.color === 'green' ? 'text-green-600' :
-                jeu.color === 'red' ? 'text-red-600' :
-                jeu.color === 'yellow' ? 'text-yellow-600' :
-                jeu.color === 'orange' ? 'text-orange-600' :
-                jeu.color === 'teal' ? 'text-teal-600' :
-                jeu.color === 'pink' ? 'text-pink-600' :
-                jeu.color === 'indigo' ? 'text-indigo-600' :
-                jeu.color === 'slate' ? 'text-slate-600' :
-                'text-gray-600'
-              }`}>{jeu.description}</p>
-            </div>
-          </div>
-          <span className={`px-2 py-1 rounded-full text-xs ${
-            jeu.difficulte === 'Facile' ? 'bg-green-200 text-green-800' :
-            jeu.difficulte === 'Moyen' ? 'bg-yellow-200 text-yellow-800' :
-            'bg-red-200 text-red-800'
-          }`}>
-            {jeu.difficulte}
-          </span>
-        </div>
-
-        <div className={`flex items-center justify-between text-xs mb-3 ${
-          jeu.color === 'blue' ? 'text-blue-600' :
-          jeu.color === 'purple' ? 'text-purple-600' :
-          jeu.color === 'green' ? 'text-green-600' :
-          jeu.color === 'red' ? 'text-red-600' :
-          jeu.color === 'yellow' ? 'text-yellow-600' :
-          jeu.color === 'orange' ? 'text-orange-600' :
-          jeu.color === 'teal' ? 'text-teal-600' :
-          jeu.color === 'pink' ? 'text-pink-600' :
-          jeu.color === 'indigo' ? 'text-indigo-600' :
-          jeu.color === 'slate' ? 'text-slate-600' :
-          'text-gray-600'
-        }`}>
-          <span className="flex items-center">
-            <Timer className="w-3 h-3 mr-1" />
-            {jeu.duree}
-          </span>
-          <span className="flex items-center">
-            <Users className="w-3 h-3 mr-1" />
-            2 joueurs
-          </span>
-          {jeu.needsCorrection && (
-            <span className="flex items-center">
-              <ClipboardCheck className="w-3 h-3 mr-1" />
-              Correction
-            </span>
-          )}
-        </div>
-
-        <Button
-          onClick={() => demarrerPartie(jeu.id)}
-          className={`w-full transition-colors ${
-            jeu.color === 'blue' ? 'bg-blue-500 hover:bg-blue-600' :
-            jeu.color === 'purple' ? 'bg-purple-500 hover:bg-purple-600' :
-            jeu.color === 'green' ? 'bg-green-500 hover:bg-green-600' :
-            jeu.color === 'red' ? 'bg-red-500 hover:bg-red-600' :
-            jeu.color === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' :
-            jeu.color === 'orange' ? 'bg-orange-500 hover:bg-orange-600' :
-            jeu.color === 'teal' ? 'bg-teal-500 hover:bg-teal-600' :
-            jeu.color === 'pink' ? 'bg-pink-500 hover:bg-pink-600' :
-            jeu.color === 'indigo' ? 'bg-indigo-500 hover:bg-indigo-600' :
-            jeu.color === 'slate' ? 'bg-slate-500 hover:bg-slate-600' :
-            'bg-gray-500 hover:bg-gray-600'
-          }`}
-          size="sm"
-        >
-          <Play className="w-3 h-3 mr-1" />
-          Jouer maintenant
-        </Button>
-      </Card>
-    );
-  };
-
-  const InterfaceJeu = () => {
-    if (!partieEnCours) return null;
-    
-    const jeuConfig = jeuxDisponibles.find(j => j.id === partieEnCours.type);
-    const questionsActuelles = jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple' ? 
-      partieEnCours.questions : partieEnCours.questionsSimples;
-    const question = questionsActuelles[questionActuelle];
-    const progress = ((questionActuelle + 1) / questionsActuelles.length) * 100;
-    
-    let estSujet = false;
-    let estDevineur = false;
-    let peutRepondre = false;
-
-    if (jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') {
-      estSujet = question?.sujet === currentUser.id;
-      estDevineur = question?.devineur === currentUser.id;
-      peutRepondre = (estSujet && !question?.reponduParSujet) || 
-                    (estDevineur && !question?.reponduParDevineur);
-    } else {
-      const estUtilisateur1 = currentUser.id === partieEnCours.scores.utilisateur1.utilisateur.id;
-      peutRepondre = estUtilisateur1 ? !question?.reponduParUtilisateur1 : !question?.reponduParUtilisateur2;
-    }
-
-    const IconComponent = iconMap[jeuConfig?.icon] || Gamepad2;
-
-    return (
-      <div className="space-y-6">
-        {/* Sélecteur de vue pour les jeux avec correction */}
-        {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
-          <div className={`flex mb-4 ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
-            <Button
-              variant={!vueCorrection ? 'default' : 'outline'}
-              onClick={() => setVueCorrection(false)}
-              className={`${!vueCorrection ? 'bg-blue-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''}`}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Jouer ({questionsActuelles.length} questions)
-            </Button>
-            <Button
-              variant={vueCorrection ? 'default' : 'outline'}
-              onClick={() => setVueCorrection(true)}
-              className={`${vueCorrection ? 'bg-orange-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''} relative`}
-            >
-              <ClipboardCheck className="w-4 h-4 mr-2" />
-              Correction ({getQuestionsACorreger().length})
-              {getQuestionsACorreger().length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {getQuestionsACorreger().length}
-                </span>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {!vueCorrection ? (
-          // VUE NORMALE DU JEU
-          <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-            {/* En-tête du jeu */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-blue-800 flex items-center">
-                  <IconComponent className="w-6 h-6 mr-2" />
-                  {jeuConfig?.nom}
-                </h3>
-                <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                  {questionActuelle + 1}/{questionsActuelles.length}
-                </span>
-              </div>
-              
-              {/* Barre de progression */}
-              <div className="w-full bg-blue-200 rounded-full h-3">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              
-              {/* Scores */}
-              <div className={`grid gap-4 mt-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <div className="bg-white p-3 rounded-lg border border-blue-200">
-                  <div className="text-sm text-gray-600">Votre score</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {partieEnCours.scores.utilisateur1.utilisateur.id === currentUser.id ? 
-                      partieEnCours.scores.utilisateur1.score : 
-                      partieEnCours.scores.utilisateur2.score}
-                  </div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-blue-200">
-                  <div className="text-sm text-gray-600">{partenaire.nom}</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {partieEnCours.scores.utilisateur1.utilisateur.id === partenaire.id ? 
-                      partieEnCours.scores.utilisateur1.score : 
-                      partieEnCours.scores.utilisateur2.score}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Interface de question */}
-            <div className="mb-6">
-              <div className="bg-white p-4 rounded-lg border border-blue-200 mb-4">
-                <h4 className="font-medium text-gray-800 mb-2 text-lg">
-                  {question?.questionText || question?.question}
-                </h4>
-                
-                {/* Indicateur de rôle pour jeux avec correction */}
-                {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
-                  <div className={`text-sm mb-3 p-2 rounded ${
-                    estSujet ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                  }`}>
-                    {estSujet ? 
-                      "🎯 Vous devez donner la vraie réponse à cette question sur vous" : 
-                      `🔮 Vous devez deviner la réponse de ${partenaire.nom} à cette question`}
-                  </div>
-                )}
-                
-                {/* Statut des réponses pour jeux avec correction */}
-                {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
-                  <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-                    <div className={`p-2 rounded ${
-                      question?.reponduParSujet ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {question?.reponduParSujet ? '✅' : '⏳'} Vraie réponse
-                    </div>
-                    <div className={`p-2 rounded ${
-                      question?.reponduParDevineur ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {question?.reponduParDevineur ? '✅' : '⏳'} Devinette
-                    </div>
-                  </div>
-                )}
-
-                {/* Options pour "Tu préfères" */}
-                {partieEnCours.type === 'tu-preferes' && question?.optionA && (
-                  <div className={`grid gap-3 mb-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                    <Button
-                      variant="outline"
-                      className="p-4 h-auto text-left justify-start"
-                      onClick={() => {
-                        setReponseInput(question.optionA);
-                        setTimeout(() => soumettreReponse(), 100);
-                      }}
-                      disabled={!peutRepondre}
-                    >
-                      <div>
-                        <span className="font-medium">Option A</span>
-                        <p className="text-sm mt-1">{question.optionA}</p>
-                      </div>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="p-4 h-auto text-left justify-start"
-                      onClick={() => {
-                        setReponseInput(question.optionB);
-                        setTimeout(() => soumettreReponse(), 100);
-                      }}
-                      disabled={!peutRepondre}
-                    >
-                      <div>
-                        <span className="font-medium">Option B</span>
-                        <p className="text-sm mt-1">{question.optionB}</p>
-                      </div>
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Interface de réponse */}
-              {partieEnCours.type !== 'tu-preferes' && peutRepondre ? (
-                <div className="space-y-3">
-                  <Input
-                    value={reponseInput}
-                    onChange={(e) => setReponseInput(e.target.value)}
-                    placeholder={(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') ? 
-                      (estSujet ? "Votre vraie réponse..." : "Votre devinette...") :
-                      "Votre réponse..."
-                    }
-                    className="border-blue-200 focus:border-blue-500"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && reponseInput.trim()) {
-                        soumettreReponse();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={soumettreReponse}
-                    disabled={!reponseInput.trim()}
-                    className="w-full bg-blue-500 hover:bg-blue-600"
-                  >
-                    {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') ? 
-                      (estSujet ? "Donner ma vraie réponse" : "Envoyer ma devinette") :
-                      "Valider ma réponse"
-                    }
-                  </Button>
-                </div>
-              ) : !peutRepondre && partieEnCours.type !== 'tu-preferes' ? (
-                <div className="text-center py-4 text-gray-600">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <div className="text-sm">
-                    {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') ? 
-                      (!question?.reponduParSujet && estDevineur ? "En attente de la vraie réponse..." :
-                       !question?.reponduParDevineur && estSujet ? "En attente de la devinette..." :
-                       "Réponses complètes ! En attente de correction...") :
-                      "Vous avez déjà répondu à cette question."
-                    }
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Contrôles */}
-            <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
-              <Button
-                variant="ghost"
-                onClick={() => setPartieEnCours(null)}
-                className="text-blue-600"
-              >
-                Quitter la partie
-              </Button>
-              {questionActuelle > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setQuestionActuelle(questionActuelle - 1)}
-                  className="border-blue-200"
-                >
-                  Question précédente
-                </Button>
-              )}
-              {questionActuelle < questionsActuelles.length - 1 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setQuestionActuelle(questionActuelle + 1)}
-                  className="border-blue-200"
-                >
-                  Question suivante
-                </Button>
-              )}
-            </div>
-          </Card>
-        ) : (
-          // VUE CORRECTION (uniquement pour les jeux avec correction)
-          <div className="space-y-6">
-            {/* Section : Questions à corriger */}
-            <Card className="p-6 border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50">
-              <h3 className="font-semibold text-orange-800 mb-4 flex items-center">
-                <ClipboardCheck className="w-6 h-6 mr-2" />
-                Réponses de {partenaire.nom} à corriger ({getQuestionsACorreger().length})
-              </h3>
-              
-              {getQuestionsACorreger().length > 0 ? (
-                <div className="space-y-4">
-                  {getQuestionsACorreger().map((q, qIndex) => {
-                    const realIndex = partieEnCours.questions.findIndex(question => question === q);
-                    return (
-                      <div key={realIndex} className="bg-white p-4 rounded-lg border border-orange-200">
-                        <div className="mb-3">
-                          <h5 className="font-medium text-gray-800 mb-2">
-                            Question : {q.questionText}
-                          </h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div className="bg-green-50 p-3 rounded border border-green-200">
-                              <strong className="text-green-800">Votre vraie réponse :</strong>
-                              <p className="text-green-700 mt-1">{q.reponseSujet}</p>
-                            </div>
-                            <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                              <strong className="text-blue-800">Devinette de {partenaire.nom} :</strong>
-                              <p className="text-blue-700 mt-1">{q.reponseDevineur}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={() => corrigerReponse(realIndex, true)}
-                            className="bg-green-500 hover:bg-green-600 flex-1"
-                          >
-                            <ThumbsUp className="w-4 h-4 mr-2" />
-                            Correct ! (+{q.points || 10} pts)
-                          </Button>
-                          <Button
-                            onClick={() => corrigerReponse(realIndex, false)}
-                            className="bg-red-500 hover:bg-red-600 flex-1"
-                          >
-                            <ThumbsDown className="w-4 h-4 mr-2" />
-                            Incorrect (0 pt)
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-orange-600">
-                  <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune réponse à corriger pour le moment</p>
-                  <p className="text-sm mt-2">Les réponses apparaîtront ici quand votre partenaire aura joué</p>
-                </div>
-              )}
-            </Card>
-
-            {/* Section : Mes réponses en attente */}
-            <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <h3 className="font-semibold text-blue-800 mb-4 flex items-center">
-                <Clock className="w-6 h-6 mr-2" />
-                Vos réponses en attente de correction ({getMesReponsesEnAttente().length})
-              </h3>
-              
-              {getMesReponsesEnAttente().length > 0 ? (
-                <div className="space-y-4">
-                  {getMesReponsesEnAttente().map((q, qIndex) => {
-                    const realIndex = partieEnCours.questions.findIndex(question => question === q);
-                    return (
-                      <div key={realIndex} className="bg-white p-4 rounded-lg border border-blue-200">
-                        <h5 className="font-medium text-gray-800 mb-2">
-                          Question : {q.questionText}
-                        </h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="bg-green-50 p-3 rounded border border-green-200">
-                            <strong className="text-green-800">Vraie réponse de {partenaire.nom} :</strong>
-                            <p className="text-green-700 mt-1">{q.reponseSujet}</p>
-                          </div>
-                          <div className="bg-orange-50 p-3 rounded border border-orange-200">
-                            <strong className="text-orange-800">Votre devinette :</strong>
-                            <p className="text-orange-700 mt-1">{q.reponseDevineur}</p>
-                          </div>
-                        </div>
-                        <div className="mt-3 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm">
-                            <Clock className="w-4 h-4 mr-2" />
-                            En attente de correction par {partenaire.nom}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-blue-600">
-                  <Lightbulb className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune réponse en attente</p>
-                  <p className="text-sm mt-2">Vos devinettes apparaîtront ici en attente de correction</p>
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const QuizSelectionModal = () => {
+  const QuizSelectionModal: React.FC = () => {
     const quizCouple = jeuxDisponibles.find(j => j.id === 'quiz-couple');
     
     if (!showQuizSelection || !quizCouple?.subQuizzes) return null;
@@ -818,13 +673,15 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
 
         <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {quizCouple.subQuizzes.map((subQuiz) => (
-            <Card key={subQuiz.id} className={`p-4 border cursor-pointer transition-all duration-200 hover:shadow-md ${
-              subQuiz.difficulte === 'Facile' ? 'border-green-200 bg-green-50 hover:bg-green-100' :
-              subQuiz.difficulte === 'Moyen' ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100' :
-              subQuiz.difficulte === 'Difficile' ? 'border-orange-200 bg-orange-50 hover:bg-orange-100' :
-              'border-red-200 bg-red-50 hover:bg-red-100'
-            }`}
-            onClick={() => demarrerPartie('quiz-couple', subQuiz.id)}
+            <Card 
+              key={subQuiz.id} 
+              className={`p-4 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                subQuiz.difficulte === 'Facile' ? 'border-green-200 bg-green-50 hover:bg-green-100' :
+                subQuiz.difficulte === 'Moyen' ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100' :
+                subQuiz.difficulte === 'Difficile' ? 'border-orange-200 bg-orange-50 hover:bg-orange-100' :
+                'border-red-200 bg-red-50 hover:bg-red-100'
+              }`}
+              onClick={() => demarrerPartie('quiz-couple', subQuiz.id)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -899,6 +756,106 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
       </Card>
     );
   };
+
+  const JeuCard: React.FC<{ jeu: JeuDisponible }> = ({ jeu }) => {
+    const IconComponent = iconMap[jeu.icon] || Gamepad2;
+    
+    return (
+      <Card className={`p-4 border hover:shadow-lg transition-all duration-200 ${
+        jeu.color === 'blue' ? 'border-blue-200 bg-blue-50 hover:bg-blue-100' :
+        jeu.color === 'purple' ? 'border-purple-200 bg-purple-50 hover:bg-purple-100' :
+        jeu.color === 'green' ? 'border-green-200 bg-green-50 hover:bg-green-100' :
+        jeu.color === 'red' ? 'border-red-200 bg-red-50 hover:bg-red-100' :
+        jeu.color === 'yellow' ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100' :
+        'border-gray-200 bg-gray-50 hover:bg-gray-100'
+      }`}>
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            <IconComponent className={`w-8 h-8 ${
+              jeu.color === 'blue' ? 'text-blue-600' :
+              jeu.color === 'purple' ? 'text-purple-600' :
+              jeu.color === 'green' ? 'text-green-600' :
+              jeu.color === 'red' ? 'text-red-600' :
+              jeu.color === 'yellow' ? 'text-yellow-600' :
+              'text-gray-600'
+            }`} />
+            <div>
+              <h4 className={`font-medium ${
+                jeu.color === 'blue' ? 'text-blue-800' :
+                jeu.color === 'purple' ? 'text-purple-800' :
+                jeu.color === 'green' ? 'text-green-800' :
+                jeu.color === 'red' ? 'text-red-800' :
+                jeu.color === 'yellow' ? 'text-yellow-800' :
+                'text-gray-800'
+              }`}>{jeu.nom}</h4>
+              <p className={`text-sm ${
+                jeu.color === 'blue' ? 'text-blue-600' :
+                jeu.color === 'purple' ? 'text-purple-600' :
+                jeu.color === 'green' ? 'text-green-600' :
+                jeu.color === 'red' ? 'text-red-600' :
+                jeu.color === 'yellow' ? 'text-yellow-600' :
+                'text-gray-600'
+              }`}>{jeu.description}</p>
+            </div>
+          </div>
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            jeu.difficulte === 'Facile' ? 'bg-green-200 text-green-800' :
+            jeu.difficulte === 'Moyen' ? 'bg-yellow-200 text-yellow-800' :
+            'bg-red-200 text-red-800'
+          }`}>
+            {jeu.difficulte}
+          </span>
+        </div>
+
+        <div className={`flex items-center justify-between text-xs mb-3 ${
+          jeu.color === 'blue' ? 'text-blue-600' :
+          jeu.color === 'purple' ? 'text-purple-600' :
+          jeu.color === 'green' ? 'text-green-600' :
+          jeu.color === 'red' ? 'text-red-600' :
+          jeu.color === 'yellow' ? 'text-yellow-600' :
+          'text-gray-600'
+        }`}>
+          <span className="flex items-center">
+            <Timer className="w-3 h-3 mr-1" />
+            {jeu.duree}
+          </span>
+          <span className="flex items-center">
+            <Users className="w-3 h-3 mr-1" />
+            2 joueurs
+          </span>
+          {jeu.needsCorrection && (
+            <span className="flex items-center">
+              <ClipboardCheck className="w-3 h-3 mr-1" />
+              Correction
+            </span>
+          )}
+        </div>
+
+        <Button
+          onClick={() => demarrerPartie(jeu.id)}
+          className={`w-full transition-colors ${
+            jeu.color === 'blue' ? 'bg-blue-500 hover:bg-blue-600' :
+            jeu.color === 'purple' ? 'bg-purple-500 hover:bg-purple-600' :
+            jeu.color === 'green' ? 'bg-green-500 hover:bg-green-600' :
+            jeu.color === 'red' ? 'bg-red-500 hover:bg-red-600' :
+            jeu.color === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' :
+            'bg-gray-500 hover:bg-gray-600'
+          }`}
+          size="sm"
+        >
+          <Play className="w-3 h-3 mr-1" />
+          Jouer maintenant
+        </Button>
+      </Card>
+    );
+  };
+
+  interface DefiCardProps {
+    defi: Defi;
+    commencerDefi: (defi: Defi) => void;
+  }
+
+  const DefiCard: React.FC<DefiCardProps> = ({ defi, commencerDefi }) => (
     <Card className={`p-4 border transition-all duration-200 ${
       defi.termine ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:shadow-md'
     }`}>
@@ -973,7 +930,29 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
       </CardHeader>
       <CardContent>
         {/* Interface de jeu en cours */}
-        {partieEnCours && <InterfaceJeu />}
+        {partieEnCours && !quizTermine && <InterfaceJeu 
+          partieEnCours={partieEnCours}
+          currentUser={currentUser}
+          partenaire={partenaire}
+          isMobile={isMobile}
+          jeuxDisponibles={jeuxDisponibles}
+          questionActuelle={questionActuelle}
+          vueCorrection={vueCorrection}
+          setVueCorrection={setVueCorrection}
+          reponseInput={reponseInput}
+          setReponseInput={setReponseInput}
+          soumettreReponse={soumettreReponse}
+          corrigerReponse={corrigerReponse}
+          setPartieEnCours={setPartieEnCours}
+          isSubmitting={isSubmitting}
+        />}
+        {quizTermine && (
+          <div className="text-center py-12">
+            <Trophy className="w-16 h-16 mx-auto text-pink-400 mb-4" />
+            <h2 className="text-2xl font-bold text-pink-700 mb-2">Quiz terminé !</h2>
+            <p className="text-lg text-gray-700 mb-4">Merci d'avoir joué ensemble !</p>
+          </div>
+        )}
 
         {/* Sélection des quiz couple */}
         {showQuizSelection && <QuizSelectionModal />}
@@ -1082,35 +1061,9 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
                   </p>
                 </div>
 
-                {/* Statistiques des défis */}
-                <div className={`grid gap-4 mb-6 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
-                  <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                    <div className="text-2xl font-bold text-orange-600">{defisCouple.length}</div>
-                    <div className="text-sm text-orange-600">Défis total</div>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                    <div className="text-2xl font-bold text-green-600">
-                      {defisCouple.filter(d => d.termine).length}
-                    </div>
-                    <div className="text-sm text-green-600">Réussis</div>
-                  </div>
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {defisCouple.filter(d => !d.termine).length}
-                    </div>
-                    <div className="text-sm text-blue-600">À faire</div>
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {defisCouple.filter(d => d.termine).reduce((acc, d) => acc + d.points, 0)}
-                    </div>
-                    <div className="text-sm text-purple-600">Points gagnés</div>
-                  </div>
-                </div>
-
                 <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   {defisCouple.map(defi => (
-                    <DefiCard key={defi.id} defi={defi} />
+                    <DefiCard key={defi.id} defi={defi} commencerDefi={commencerDefi} />
                   ))}
                 </div>
               </div>
@@ -1132,7 +1085,7 @@ const JeuxSection = ({ currentUser, partenaire, isMobile, toast }) => {
                     <div className="space-y-3">
                       {historiqueParties.map((partie, index) => {
                         const jeuConfig = jeuxDisponibles.find(j => j.id === partie.type);
-                        const IconComponent = iconMap[jeuConfig?.icon] || Gamepad2;
+                        const IconComponent = iconMap[jeuConfig?.icon || 'Gamepad2'] || Gamepad2;
                         return (
                           <Card key={index} className="p-4 border border-gray-200">
                             <div className="flex items-center justify-between">
