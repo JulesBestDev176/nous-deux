@@ -422,11 +422,14 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
 exports.supprimerQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
-    console.log(`Tentative de suppression de la question ${questionId} par l'utilisateur ${req.utilisateur.id}`);
+    // Correction : s'assurer que l'ID utilisateur est un ObjectId pour la comparaison
+    const userId = new mongoose.Types.ObjectId(req.utilisateur.id);
+
+    console.log(`Tentative de suppression de la question ${questionId} par l'utilisateur ${userId}`);
 
     const question = await Question.findOne({
       _id: questionId,
-      createur: req.utilisateur.id
+      createur: userId
     });
 
     if (!question) {
