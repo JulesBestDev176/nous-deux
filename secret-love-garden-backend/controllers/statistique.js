@@ -4,6 +4,7 @@ const Message = require('../models/Message');
 const Gallerie = require('../models/Gallerie');
 const Reponse = require('../models/Reponse');
 const Utilisateur = require('../models/Utilisateur');
+const Evenement = require('../models/Evenement');
 
 // Enregistrer une entrée de statistique
 exports.enregistrerStatistique = async (req, res) => {
@@ -192,8 +193,36 @@ exports.getTendancesHebdomadaires = async (req, res) => {
 
 // Placeholder pour les nouvelles fonctions
 exports.getStatistiquesGenerales = async (req, res) => {
-  // Renvoie un objet vide pour les stats générales
-  res.status(200).json({ success: true, data: {} });
+  try {
+    const utilisateurConnecte = await Utilisateur.findById(req.utilisateur.id);
+    if (!utilisateurConnecte || !utilisateurConnecte.partenaire) {
+      return res.status(404).json({ success: false, message: 'Utilisateur ou partenaire non trouvé' });
+    }
+    const partenaireId = utilisateurConnecte.partenaire;
+    const coupleIds = [utilisateurConnecte._id, partenaireId];
+
+    const totalMessages = await Message.countDocuments({ createur: { $in: coupleIds } });
+    const totalPhotos = await Gallerie.countDocuments({ createur: { $in: coupleIds } });
+    const totalEvenements = await Evenement.countDocuments({ createur: { $in: coupleIds } });
+
+    const prochainEvenement = await Evenement.findOne({
+      createur: { $in: coupleIds },
+      date: { $gte: new Date() }
+    }).sort({ date: 'asc' });
+
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        totalMessages,
+        totalPhotos,
+        totalEvenements,
+        prochainEvenement: prochainEvenement ? { titre: prochainEvenement.titre, date: prochainEvenement.date } : null
+      }
+    });
+  } catch (error) {
+    console.error('Erreur getStatistiquesGenerales:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
 };
 
 exports.getStatistiquesMessages = async (req, res) => {
