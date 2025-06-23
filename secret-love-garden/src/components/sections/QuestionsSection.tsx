@@ -78,9 +78,10 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         try {
           const reponseResponse = await questionService.getReponseUtilisateur(response.data._id);
           setReponseExistante(reponseResponse.data.texte);
-        } catch (error: any) {
+        } catch (error: unknown) {
           // Log détaillé de l'erreur
-          console.error('Erreur lors de la récupération de la réponse existante à la question du jour:', error, error?.response?.status, error?.response?.data);
+          const err = error as { response?: { status?: number; data?: unknown } };
+          console.error('Erreur lors de la récupération de la réponse existante à la question du jour:', err, err?.response?.status, err?.response?.data);
           // Pas de réponse existante, c'est normal
           setReponseExistante("");
         }
@@ -114,7 +115,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       // Récupérer l'ID de l'utilisateur actuel
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const monId = user._id || (typeof currentUser === 'object' && (currentUser._id || currentUser.id));
+      const monId = user._id || (typeof currentUser === 'object' && (currentUser._id));
       console.log('👤 DEBUG - user localStorage:', user, '| currentUser prop:', currentUser, '| monId:', monId);
 
       // Organiser les données par question avec les réponses de chaque partenaire
@@ -164,7 +165,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       console.log(`✅ ${questionsOrganisees.length} questions organisées pour affichage`);
       setQuestionsAvecReponses(questionsOrganisees);
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Erreur lors du chargement des réponses du couple:', error);
       
       // Fallback: charger seulement mes réponses
@@ -182,7 +183,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
           setQuestionsAvecReponses(questionsSimples);
           console.log(`📋 Fallback réussi: ${questionsSimples.length} questions avec mes réponses`);
         }
-      } catch (fallbackError) {
+      } catch (fallbackError: unknown) {
         console.error('❌ Erreur lors du fallback:', fallbackError);
         toast({
           title: "Erreur",
@@ -423,10 +424,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                       onChange={(e) => setReponseUtilisateur(e.target.value)}
                       className="min-h-[120px] resize-none text-sm sm:text-base"
                       rows={5}
+                      disabled={!!reponseExistante}
                     />
                     <Button
                       onClick={handleSubmitReponse}
-                      disabled={!reponseUtilisateur.trim() || submitting}
+                      disabled={!reponseUtilisateur.trim() || submitting || !!reponseExistante}
                       className="w-full bg-pink-500 hover:bg-pink-600 text-white h-12 rounded-xl text-sm sm:text-base"
                     >
                       {submitting ? (

@@ -285,11 +285,8 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
 
     // 1. Récupérer toutes les questions qui ont AU MOINS une réponse du couple
     const questionsAvecReponses = await Question.aggregate([
-      {
-        $match: { categorie: { $in: ['utilisateur', 'systeme'] } }
-      },
-      {
-        $lookup: {
+      { $match: { categorie: { $in: ['utilisateur', 'systeme'] } } },
+      { $lookup: {
           from: 'reponses',
           let: { questionId: '$_id' },
           pipeline: [
@@ -302,17 +299,23 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
                 }
               }
             },
-            { $sort: { dateReponse: 1 } }
+            { $sort: { dateReponse: 1 } },
+            // Peupler utilisateur (objet complet)
+            { $lookup: {
+                from: 'utilisateurs',
+                localField: 'utilisateur',
+                foreignField: '_id',
+                as: 'utilisateurObj'
+            }},
+            { $unwind: '$utilisateurObj' },
+            { $addFields: { utilisateur: '$utilisateurObj' } },
+            { $project: { utilisateurObj: 0 } }
           ],
           as: 'reponses'
         }
       },
-      {
-        $match: { 'reponses.0': { $exists: true } }
-      },
-      {
-        $sort: { dateCreation: -1 }
-      }
+      { $match: { 'reponses.0': { $exists: true } } },
+      { $sort: { dateCreation: -1 } }
     ]);
 
     // Peupler le créateur (si besoin)
