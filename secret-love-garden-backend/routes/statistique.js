@@ -24,4 +24,12 @@ router.get('/resume', protegerRoutes, statistiqueController.getResumeStatistique
 // @access  Privé
 router.get('/tendances', protegerRoutes, statistiqueController.getTendancesHebdomadaires);
 
+// Nouvelles routes pour correspondre au frontend
+router.get('/generales', protegerRoutes, statistiqueController.getStatistiquesGenerales);
+router.get('/messages', protegerRoutes, statistiqueController.getStatistiquesMessages);
+router.get('/activites', protegerRoutes, statistiqueController.getStatistiquesActivites);
+router.get('/humeur', protegerRoutes, statistiqueController.getStatistiquesHumeur);
+router.post('/humeur', protegerRoutes, statistiqueController.ajouterHumeur);
+router.get('/temps-ensemble', protegerRoutes, statistiqueController.getTempsEnsemble);
+
 module.exports = router;
