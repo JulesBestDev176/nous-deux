@@ -13,8 +13,10 @@ import jeuService from '@/services/jeu.service';
 
 // Types TypeScript
 interface CurrentUser {
-  id: string;
-  nom: string;
+  id?: string;
+  nom?: string;
+  _id?: string;
+  name?: string;
 }
 
 interface Partenaire {
@@ -124,6 +126,7 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
   });
   const [vueCorrection, setVueCorrection] = useState<boolean>(false);
   const [refreshPartie, setRefreshPartie] = useState<number>(0);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Mapping des icônes
   const iconMap: Record<string, React.ComponentType<unknown>> = {
@@ -181,13 +184,21 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
   }, []);
 
   useEffect(() => {
-    if (partieEnCours && partieEnCours._id) {
+    if (partieEnCours && partieEnCours._id && !isTyping) {
       const interval = setInterval(() => {
         refreshPartieData();
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [partieEnCours]);
+  }, [partieEnCours, isTyping]);
+
+  useEffect(() => {
+    refreshPartieData();
+  }, [refreshPartie]);
+
+  useEffect(() => {
+    setReponseInput('');
+  }, [questionActuelle]);
 
   const refreshPartieData = async (): Promise<void> => {
     if (!partieEnCours?._id) return;
@@ -587,8 +598,16 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
     let peutRepondre = false;
 
     if (jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') {
-      estSujet = question?.sujet === currentUser.id;
-      estDevineur = question?.devineur === currentUser.id;
+      const userId = currentUser.id || currentUser._id;
+      console.log('DEBUG USER:', currentUser, 'userId:', userId);
+      console.log('DEBUG ID:', {
+        questionSujet: question?.sujet,
+        questionDevineur: question?.devineur,
+        userId: userId,
+        questionRaw: question
+      });
+      estSujet = String(question?.sujet) === String(userId);
+      estDevineur = String(question?.devineur) === String(userId);
       peutRepondre = (estSujet && !question?.reponduParSujet) || 
                     (estDevineur && !question?.reponduParDevineur);
     } else {
@@ -694,6 +713,8 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
                   <div className="flex flex-col gap-2">
                     <Input
                       value={reponseInput}
+                      onFocus={() => setIsTyping(true)}
+                      onBlur={() => setIsTyping(false)}
                       onChange={(e) => setReponseInput(e.target.value)}
                       placeholder="Votre réponse..."
                       className="border-blue-200 focus:border-blue-500"

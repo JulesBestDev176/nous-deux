@@ -7,7 +7,7 @@ import { MessageCircle, Send, Heart, Calendar, User, Loader2, CheckCircle, Clock
 import questionService from "@/services/questions.service";
 
 interface QuestionsSectionProps {
-  currentUser: string;
+  currentUser: string | { _id: string; nom?: string; name?: string };
   partenaire: {
     _id: string;
     nom: string;
@@ -112,39 +112,39 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
 
       // Récupérer l'ID de l'utilisateur actuel
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const monId = user._id;
-      
-      console.log('👤 Mon ID utilisateur:', monId);
-      console.log('👥 ID partenaire:', partenaire?._id);
+      const monId = user._id || (typeof currentUser === 'object' && (currentUser._id || currentUser.id));
+      console.log('👤 DEBUG - user localStorage:', user, '| currentUser prop:', currentUser, '| monId:', monId);
 
       // Organiser les données par question avec les réponses de chaque partenaire
-      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }) => {
-        console.log(`\n🔍 --- TRAITEMENT QUESTION: "${item.question.texte.substring(0, 40)}..." ---`);
-        console.log('IDs de comparaison -> Moi:', monId, '| Partenaire:', partenaire?._id);
-
-        item.reponses?.forEach((r: Reponse, index: number) => {
-          console.log(`  Réponse ${index + 1}:`, {
-            auteurID: r.utilisateur?._id,
-            auteurNom: r.utilisateur?.nom,
-            typeOfAuteurID: typeof r.utilisateur?._id,
-            estMoi: r.utilisateur?._id === monId,
-            estPartenaire: r.utilisateur?._id === partenaire?._id,
-            texte: r.texte.substring(0, 30) + '...'
+      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: { question: Question; reponses: Reponse[] }, idx: number) => {
+        console.log(`\n🔍 [Q${idx}] Question historique:`, item);
+        let reponsesValides = [];
+        if (item.reponses && item.reponses.length > 0) {
+          item.reponses.forEach((r: Reponse, ridx: number) => {
+            if (!r) {
+              console.warn(`    [Q${idx}] ⚠️ Réponse NULL/undefined à l'index ${ridx}:`, r);
+            } else if (!r.utilisateur) {
+              console.warn(`    [Q${idx}] ⚠️ Réponse sans utilisateur à l'index ${ridx}:`, r);
+            } else if (!r.utilisateur._id) {
+              console.warn(`    [Q${idx}] ⚠️ Réponse avec utilisateur sans _id à l'index ${ridx}:`, r);
+            } else {
+              console.log(`    [Q${idx}] Réponse ${ridx}:`, r);
+            }
           });
-        });
-
+          reponsesValides = item.reponses.filter((r: Reponse) => r && r.utilisateur && r.utilisateur._id);
+        } else {
+          console.log(`    [Q${idx}] Pas de réponses pour cette question.`);
+        }
         // Trouver ma réponse et celle de mon partenaire par ID (plus fiable que le nom)
-        const maReponse = item.reponses?.find((r: Reponse) => r.utilisateur._id === monId);
-        const reponsePartenaire = item.reponses?.find((r: Reponse) => r.utilisateur._id === partenaire?._id);
-
-        console.log('📝 Résultat après recherche:', {
-          questionId: item.question._id,
-          aiMaReponse: !!maReponse,
-          aReponsePartenaire: !!reponsePartenaire,
-          maReponseTexte: maReponse?.texte?.substring(0, 30) + '...' || 'N/A',
-          reponsePartenaireTexte: reponsePartenaire?.texte?.substring(0, 30) + '...' || 'N/A'
-        });
-
+        const maReponse = reponsesValides.find((r: Reponse) =>
+          ((r.utilisateur && (r.utilisateur._id || r.utilisateur)) === monId) &&
+          (String(r.question?._id || r.question) === String(item.question._id))
+        );
+        const reponsePartenaire = reponsesValides.find((r: Reponse) =>
+          (partenaire && (r.utilisateur && (r.utilisateur._id || r.utilisateur)) === partenaire._id) &&
+          (String(r.question?._id || r.question) === String(item.question._id))
+        );
+        console.log(`    [Q${idx}] Résultat mapping: maReponse=`, maReponse ? maReponse.texte : 'Aucune', '| reponsePartenaire=', reponsePartenaire ? reponsePartenaire.texte : 'Aucune');
         return {
           question: item.question,
           maReponse,
@@ -295,6 +295,18 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     );
   }
 
+  // Filtrage robuste des questions/réponses mal formées (avant le return)
+  const filteredQuestionsAvecReponses = questionsAvecReponses.filter((q, idx) => {
+    if (!q || !q.question || !q.question._id || !q.question.texte) {
+      console.warn(`❌ Question mal formée ignorée à l'index ${idx}:`, q);
+      return false;
+    }
+    return true;
+  });
+  if (filteredQuestionsAvecReponses.length !== questionsAvecReponses.length) {
+    console.warn(`⚠️ ${questionsAvecReponses.length - filteredQuestionsAvecReponses.length} questions ignorées car mal formées.`);
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -440,7 +452,21 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       {/* Historique des réponses du couple */}
       {activeTab === 'historique' && (
         <div className="space-y-4">
-          {questionsAvecReponses.length === 0 ? (
+          {!partenaire ? (
+            <Card className="border-pink-200">
+              <CardContent className="p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <Users className="w-8 h-8 sm:w-10 sm:h-10 text-pink-500" />
+                </div>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+                  Chargement du partenaire…
+                </h3>
+                <p className="text-gray-500 text-sm sm:text-base">
+                  Veuillez patienter, nous récupérons les informations de votre partenaire.
+                </p>
+              </CardContent>
+            </Card>
+          ) : questionsAvecReponses.length === 0 ? (
             <Card className="border-pink-200">
               <CardContent className="p-8 sm:p-12 text-center">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
@@ -463,15 +489,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             </Card>
           ) : (
             <>
-             
-              
               <div className="space-y-4">
-                {questionsAvecReponses.map((questionAvecReponses) => {
+                {filteredQuestionsAvecReponses.map((questionAvecReponses) => {
                   const { question, maReponse, reponsePartenaire } = questionAvecReponses;
                   const statut = getStatutQuestion(questionAvecReponses);
+                  console.log('🟦 RENDU HISTORIQUE - Question:', question._id, '| Texte:', question.texte, '\n  maReponse:', maReponse, '\n  reponsePartenaire:', reponsePartenaire);
                   
                   return (
-                    <Card key={question._id} className="border-pink-100 hover:shadow-md transition-shadow">
+                    <Card key={question?._id || Math.random()} className="border-pink-100 hover:shadow-md transition-shadow">
                       <CardContent className="p-4 sm:p-6">
                         <div className="mb-4">
                           <div className="flex items-start justify-between mb-4">
@@ -489,16 +514,20 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                             <div className="space-y-2">
                               <div className="flex items-center text-xs sm:text-sm font-medium text-gray-700">
                                 <User className="w-4 h-4 mr-1" />
-                                <span>Vous ({currentUser})</span>
+                                <span>Vous ({
+                                  typeof currentUser === 'string'
+                                    ? currentUser
+                                    : currentUser.nom || currentUser.name || currentUser._id || 'Moi'
+                                })</span>
                               </div>
                               {maReponse ? (
                                 <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border-l-4 border-blue-300">
                                   <p className="text-gray-700 leading-relaxed mb-2 text-sm sm:text-base">
-                                    {maReponse.texte}
+                                    {maReponse?.texte || ''}
                                   </p>
                                   <div className="text-xs text-gray-500 flex items-center">
                                     <Clock className="w-3 h-3 mr-1" />
-                                    {formatDateTime(maReponse.dateReponse)}
+                                    {maReponse?.dateReponse ? formatDateTime(maReponse.dateReponse) : ''}
                                   </div>
                                 </div>
                               ) : (
@@ -517,11 +546,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                               {reponsePartenaire ? (
                                 <div className="bg-pink-50 p-3 sm:p-4 rounded-lg border-l-4 border-pink-300">
                                   <p className="text-gray-700 leading-relaxed mb-2 text-sm sm:text-base">
-                                    {reponsePartenaire.texte}
+                                    {reponsePartenaire?.texte || ''}
                                   </p>
                                   <div className="text-xs text-gray-500 flex items-center">
                                     <Clock className="w-3 h-3 mr-1" />
-                                    {formatDateTime(reponsePartenaire.dateReponse)}
+                                    {reponsePartenaire?.dateReponse ? formatDateTime(reponsePartenaire.dateReponse) : ''}
                                   </div>
                                 </div>
                               ) : (

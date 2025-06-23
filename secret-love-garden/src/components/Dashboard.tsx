@@ -47,7 +47,7 @@ function useIsMobile() {
 }
 
 interface DashboardProps {
-  currentUser: string;
+  currentUser: { id?: string; _id?: string; name?: string; nom?: string };
   onLogout: () => void;
 }
 
@@ -235,7 +235,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
                   </h1>
                   {!isMobile && (
                     <p className="text-sm text-gray-600">
-                      {currentUser} & {partenaire?.nom || "..."} 💕
+                      {(currentUser?.name || currentUser?.nom)} & {partenaire?.nom || "..."} 💕
                     </p>
                   )}
                 </div>
@@ -283,7 +283,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold">Menu</h2>
-                    <p className="text-pink-100 text-sm">{currentUser}</p>
+                    <p className="text-pink-100 text-sm">{currentUser?.name || currentUser?.nom} 💕</p>
                   </div>
                   <Button
                     variant="ghost"

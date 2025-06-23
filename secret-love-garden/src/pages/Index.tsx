@@ -83,7 +83,7 @@ const Index = ({ isAuthenticated, currentUser, onLogin, onLogout }) => {
     console.log("Index - Affichage du Dashboard pour:", userName);
     return (
       <Dashboard
-        currentUser={userName}
+        currentUser={currentUser}
         onLogout={() => {
           onLogout();
           toast({
