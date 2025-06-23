@@ -13,7 +13,6 @@ const ObjectifsSection = ({ currentUser, isMobile, toast }) => {
   const [nouvelObjectif, setNouvelObjectif] = useState({
     titre: '',
     description: '',
-    categorie: 'couple',
     dateCible: ''
   });
 
@@ -47,10 +46,16 @@ const ObjectifsSection = ({ currentUser, isMobile, toast }) => {
       return;
     }
     try {
-      const res = await objectifService.creerObjectif(nouvelObjectif);
+      const objectifPayload = {
+        titre: nouvelObjectif.titre,
+        description: nouvelObjectif.description,
+        categorie: 'personnel',
+        dateObjectif: nouvelObjectif.dateCible
+      };
+      const res = await objectifService.creerObjectif(objectifPayload);
       setObjectifs(prev => [...prev, res.data || res]);
       setShowForm(false);
-      setNouvelObjectif({ titre: '', description: '', categorie: 'couple', dateCible: '' });
+      setNouvelObjectif({ titre: '', description: '', dateCible: '' });
       toast({
         title: "Objectif créé !",
         description: "Un nouveau but à atteindre ensemble.",

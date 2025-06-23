@@ -18,8 +18,8 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
     contenu: '',
     dateRappel: '',
     priorite: 'normale',
-    type: 'general',
-    images: []
+    images: [],
+    type: 'texte'
   });
 
   const priorites = [
@@ -30,14 +30,9 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
   ];
 
   const types = [
-    { value: 'general', label: 'Général', icon: '📝' },
-    { value: 'anniversaire', label: 'Anniversaire', icon: '🎂' },
-    { value: 'rendez_vous', label: 'Rendez-vous', icon: '💕' },
-    { value: 'voyage', label: 'Voyage', icon: '✈️' },
-    { value: 'cadeau', label: 'Idée cadeau', icon: '🎁' },
-    { value: 'sante', label: 'Santé', icon: '🏥' },
-    { value: 'maison', label: 'Maison', icon: '🏠' },
-    { value: 'travail', label: 'Travail', icon: '💼' }
+    { value: 'texte', label: 'Texte', icon: '📝' },
+    { value: 'image', label: 'Image', icon: '🖼️' },
+    { value: 'mixte', label: 'Mixte', icon: '📎' }
   ];
 
   const statuts = [
@@ -85,8 +80,8 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
         contenu: '',
         dateRappel: '',
         priorite: 'normale',
-        type: 'general',
-        images: []
+        images: [],
+        type: 'texte'
       });
       setShowCreateForm(false);
       
@@ -429,17 +424,6 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
                     </option>
                   ))}
                 </select>
-                <select
-                  value={nouveauRappel.type}
-                  onChange={(e) => setNouveauRappel(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-pink-200 rounded-md focus:border-pink-500"
-                >
-                  {types.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.icon} {type.label}
-                    </option>
-                  ))}
-                </select>
               </div>
               <div className={`flex space-x-2 ${isMobile ? 'flex-col space-x-0 space-y-2' : ''}`}>
                 <Button
@@ -459,8 +443,8 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
                       contenu: '',
                       dateRappel: '',
                       priorite: 'normale',
-                      type: 'general',
-                      images: []
+                      images: [],
+                      type: 'texte'
                     });
                   }}
                   className={isMobile ? 'w-full' : ''}

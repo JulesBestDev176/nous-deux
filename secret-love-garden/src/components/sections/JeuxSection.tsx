@@ -177,14 +177,14 @@ const InterfaceJeu: React.FC<InterfaceJeuProps> = ({
   let maReponse: string | undefined = '';
 
   if (isCorrectionGame && question) {
-    const estSujet = question.sujet === currentUser.id;
-    const estDevineur = question.devineur === currentUser.id;
+    const estSujet = question.sujet?.toString?.() === currentUser.id;
+    const estDevineur = question.devineur?.toString?.() === currentUser.id;
     
     aRepondu = (estSujet && !!question.reponduParSujet) || (estDevineur && !!question.reponduParDevineur);
     partenaireARepondu = (estSujet && !!question.reponduParDevineur) || (estDevineur && !!question.reponduParSujet);
     maReponse = estSujet ? question.reponseSujet : question.reponseDevineur;
   } else if (question) {
-    const estUtilisateur1 = partieEnCours.scores.utilisateur1.utilisateur.id === currentUser.id;
+    const estUtilisateur1 = partieEnCours.scores.utilisateur1.utilisateur.id?.toString?.() === currentUser.id;
     aRepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur1 : question.reponduParUtilisateur2);
     partenaireARepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur2 : question.reponduParUtilisateur1);
     maReponse = estUtilisateur1 ? question.reponseUtilisateur1 : question.reponseUtilisateur2;
@@ -502,6 +502,31 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
     }
   };
 
+  const findNextUnansweredQuestion = (partie, currentUser) => {
+    // Pour jeux à correction
+    if (partie.questions && partie.questions.length > 0) {
+      for (let i = 0; i < partie.questions.length; i++) {
+        const q = partie.questions[i];
+        const estSujet = q.sujet?.toString?.() === currentUser.id;
+        const estDevineur = q.devineur?.toString?.() === currentUser.id;
+        if ((estSujet && !q.reponduParSujet) || (estDevineur && !q.reponduParDevineur)) {
+          return i;
+        }
+      }
+    }
+    // Pour jeux simples
+    if (partie.questionsSimples && partie.questionsSimples.length > 0) {
+      for (let i = 0; i < partie.questionsSimples.length; i++) {
+        const q = partie.questionsSimples[i];
+        const estUtilisateur1 = currentUser.id === partie.scores.utilisateur1.utilisateur.id?.toString?.();
+        if ((estUtilisateur1 && !q.reponduParUtilisateur1) || (!estUtilisateur1 && !q.reponduParUtilisateur2)) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  };
+
   const soumettreReponse = async (): Promise<void> => {
     if (!reponseInput.trim() || !partieEnCours || isSubmitting) return;
     setIsSubmitting(true);
@@ -514,12 +539,10 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
       setPartieEnCours(res.data);
       setReponseInput('');
 
-      // Passage automatique à la question suivante
-      const questionsActuelles = (res.data.questions && res.data.questions.length > 0)
-        ? res.data.questions
-        : res.data.questionsSimples;
-      if (questionActuelle < questionsActuelles.length - 1) {
-        setQuestionActuelle(q => q + 1);
+      // Passage automatique à la prochaine question non répondue
+      const nextIndex = findNextUnansweredQuestion(res.data, currentUser);
+      if (nextIndex !== -1) {
+        setQuestionActuelle(nextIndex);
       } else {
         setQuizTermine(true);
       }

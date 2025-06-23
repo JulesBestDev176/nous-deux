@@ -101,6 +101,18 @@ const getQuestionsAvecReponsesCouple = async () => {
   }
 };
 
+const supprimerQuestion = async (questionId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${API_URL}/api/questions/${questionId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
 export default {
   getQuestionDuJour,
   soumettreReponse,
@@ -109,5 +121,6 @@ export default {
   getReponsesUtilisateur,
   getQuestionsPersonnalisees,
   getReponsesPartenaire,
-  getQuestionsAvecReponsesCouple  // ← Nouvelle méthode ajoutée
+  getQuestionsAvecReponsesCouple,
+  supprimerQuestion
 };

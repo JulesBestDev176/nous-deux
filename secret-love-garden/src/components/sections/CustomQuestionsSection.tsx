@@ -15,7 +15,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
   useEffect(() => {
     // Vérifier si une réponse existe déjà
     if (question.reponses && question.reponses.length > 0) {
-      const maReponse = question.reponses.find(r => r.auteur?.nom === currentUser);
+      const maReponse = question.reponses.find(r => r.utilisateur?.nom === currentUser);
       if (maReponse) {
         setReponseExistante(maReponse);
       }
@@ -154,7 +154,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
       {question.reponses && question.reponses.length > 0 && (
         <div className="mt-4 space-y-2">
           {question.reponses
-            .filter(r => r.auteur?.nom !== currentUser)
+            .filter(r => r.utilisateur?.nom !== currentUser)
             .map((reponsePartenaire, index) => (
               <div key={index} className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                 <div className="flex items-center space-x-2 mb-2">
@@ -188,8 +188,8 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
 
   const fetchQuestionsPersonnalisees = async () => {
     try {
-      const res = await questionService.getQuestionsPersonnalisees();
-      setQuestionsPersonnalisees(res.data || res);
+      const res = await questionService.getQuestionsAvecReponsesCouple();
+      setQuestionsPersonnalisees(res.data || []);
     } catch (error) {
       toast({
         title: "Erreur",
@@ -202,34 +202,28 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
   };
 
   const handleCreateQuestion = async () => {
-    if (!nouvelleQuestion.trim()) {
+    if (!nouvelleQuestion.trim() || nouvelleQuestion.trim().length < 5) {
       toast({
-        title: "Question vide",
-        description: "Veuillez saisir une question",
+        title: "Question trop courte",
+        description: "La question doit contenir au moins 5 caractères.",
         variant: "destructive",
       });
       return;
     }
-
     setCreatingQuestion(true);
     try {
-      const res = await questionService.creerQuestionPersonnalisee({
-        texte: nouvelleQuestion,
-        type: 'personnalisee'
-      });
-      
-      setQuestionsPersonnalisees(prev => [res.data || res, ...prev]);
+      await questionService.ajouterQuestion({ texte: nouvelleQuestion });
       setNouvelleQuestion("");
       setShowCreateForm(false);
-      
       toast({
-        title: "Question créée",
-        description: "Votre question a été ajoutée avec succès",
+        title: "Question ajoutée !",
+        description: "Votre question personnalisée a été créée.",
       });
+      fetchQuestionsPersonnalisees();
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Impossible de créer la question",
+        description: "Impossible d'ajouter la question",
         variant: "destructive",
       });
     } finally {
@@ -241,11 +235,11 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette question ?")) {
       try {
         await questionService.supprimerQuestion(questionId);
-        setQuestionsPersonnalisees(prev => prev.filter(q => q._id !== questionId));
         toast({
           title: "Question supprimée",
           description: "La question a été supprimée avec succès",
         });
+        fetchQuestionsPersonnalisees();
       } catch (error) {
         toast({
           title: "Erreur",
@@ -306,7 +300,7 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
           <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
             <div className="text-2xl font-bold text-purple-600">
               {questionsPersonnalisees.filter(q => 
-                q.reponses && q.reponses.some(r => r.auteur?.nom === currentUser)
+                q.reponses && q.reponses.some(r => r.utilisateur?.nom === currentUser)
               ).length}
             </div>
             <div className="text-sm text-purple-600">Répondues</div>
@@ -315,7 +309,7 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
             <div className="text-2xl font-bold text-yellow-600">
               {questionsPersonnalisees.filter(q => 
                 q.createur?.nom !== currentUser && 
-                (!q.reponses || !q.reponses.some(r => r.auteur?.nom === currentUser))
+                (!q.reponses || !q.reponses.some(r => r.utilisateur?.nom === currentUser))
               ).length}
             </div>
             <div className="text-sm text-yellow-600">En attente</div>
