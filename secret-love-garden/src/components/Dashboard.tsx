@@ -387,9 +387,9 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
           )}
 
           <main className="flex-1">
-            <div className="mb-6">
+            {/* <div className="mb-6">
               <PWAInstallPrompt />
-            </div>
+            </div> */}
 
             {renderSection()}
           </main>
