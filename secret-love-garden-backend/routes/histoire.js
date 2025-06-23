@@ -3,13 +3,8 @@ const router = express.Router();
 const histoireController = require('../controllers/histoire');
 const { protegerRoutes } = require('../middlewares/auth');
 
-// @route   GET /api/histoire/generer
-// @desc    Générer une nouvelle entrée d'histoire
-// @access  Privé
-router.get('/generer', protegerRoutes, histoireController.genererHistoire);
-
 // @route   GET /api/histoire
-// @desc    Obtenir l'historique complet
+// @desc    Obtenir l'historique de l'histoire
 // @access  Privé
 router.get('/', protegerRoutes, histoireController.getHistorique);
 
