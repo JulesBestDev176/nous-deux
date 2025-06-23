@@ -28,10 +28,20 @@ router.get('/partie/:partieId', protegerRoutes, jeuController.getPartie);
 // @access  Privé
 router.post('/partie/:partieId/reponse', protegerRoutes, jeuController.soumettreReponse);
 
-// @route   GET /api/jeu/quiz-relation
-// @desc    Obtenir les questions du quiz de relation
+// @route   POST /api/jeu/partie/:partieId/corriger
+// @desc    Corriger une réponse (pour jeux avec correction)
 // @access  Privé
-router.get('/quiz-relation', protegerRoutes, jeuController.getQuizRelation);
+router.post('/partie/:partieId/corriger', protegerRoutes, jeuController.corrigerReponse);
+
+// @route   PATCH /api/jeu/partie/:partieId/terminer
+// @desc    Terminer une partie manuellement
+// @access  Privé
+router.patch('/partie/:partieId/terminer', protegerRoutes, jeuController.terminerPartie);
+
+// @route   PATCH /api/jeu/partie/:partieId/abandonner
+// @desc    Abandonner une partie
+// @access  Privé
+router.patch('/partie/:partieId/abandonner', protegerRoutes, jeuController.abandonnerPartie);
 
 // @route   GET /api/jeu/defis
 // @desc    Obtenir les défis disponibles pour le couple
@@ -43,9 +53,14 @@ router.get('/defis', protegerRoutes, jeuController.getDeffisCouple);
 // @access  Privé
 router.post('/defi/:defiId/completer', protegerRoutes, jeuController.completerDefi);
 
-// @route   GET /api/jeu/questions-preferences
-// @desc    Obtenir les questions de préférences
+// @route   GET /api/jeu/questions/:typeJeu
+// @desc    Obtenir les questions d'un type de jeu spécifique
 // @access  Privé
-router.get('/questions-preferences', protegerRoutes, jeuController.getQuestionsPreferences);
+router.get('/questions/:typeJeu', protegerRoutes, jeuController.getQuestionsJeu);
+
+// @route   GET /api/jeu/statistiques
+// @desc    Obtenir les statistiques globales des jeux
+// @access  Privé
+router.get('/statistiques', protegerRoutes, jeuController.getStatistiquesJeux);
 
 module.exports = router;

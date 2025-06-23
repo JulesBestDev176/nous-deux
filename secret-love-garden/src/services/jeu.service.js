@@ -10,7 +10,7 @@ const getJeuxDisponibles = async () => {
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
@@ -23,20 +23,51 @@ const demarrerPartie = async (typeJeu) => {
     );
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
-const soumettreReponseJeu = async (partieId, reponse) => {
+const getPartie = async (partieId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/jeu/partie/${partieId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const soumettreReponse = async (partieId, indexQuestion, reponse) => {
   try {
     const token = localStorage.getItem('token');
     const response = await axios.post(`${API_URL}/api/jeu/partie/${partieId}/reponse`, 
-      { reponse },
+      { 
+        indexQuestion,
+        reponse 
+      },
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const corrigerReponse = async (partieId, indexQuestion, estCorrect) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`${API_URL}/api/jeu/partie/${partieId}/corriger`, 
+      { 
+        indexQuestion,
+        estCorrect 
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
@@ -48,19 +79,19 @@ const getHistoriqueParties = async () => {
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
 const getQuizRelation = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/api/jeu/quiz-relation`, {
+    const response = await axios.get(`${API_URL}/api/jeu/questions/quiz-relation`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
@@ -72,7 +103,7 @@ const getDeffisCouple = async () => {
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
@@ -97,29 +128,85 @@ const completerDefi = async (defiId, preuveData) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
 const getQuestionsPreferences = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/api/jeu/questions-preferences`, {
+    const response = await axios.get(`${API_URL}/api/jeu/questions/preferences`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const getQuestionsJeu = async (typeJeu) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/jeu/questions/${typeJeu}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const terminerPartie = async (partieId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.patch(`${API_URL}/api/jeu/partie/${partieId}/terminer`, 
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const abandonnerPartie = async (partieId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.patch(`${API_URL}/api/jeu/partie/${partieId}/abandonner`, 
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
+  }
+};
+
+const getStatistiquesJeux = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/jeu/statistiques`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Erreur réseau' };
   }
 };
 
 export default {
   getJeuxDisponibles,
   demarrerPartie,
-  soumettreReponseJeu,
+  getPartie,
+  soumettreReponse,
+  corrigerReponse,
   getHistoriqueParties,
   getQuizRelation,
   getDeffisCouple,
   completerDefi,
-  getQuestionsPreferences
+  getQuestionsPreferences,
+  getQuestionsJeu,
+  terminerPartie,
+  abandonnerPartie,
+  getStatistiquesJeux
 };
