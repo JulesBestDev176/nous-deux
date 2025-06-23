@@ -7,11 +7,15 @@ exports.creerRappel = async (req, res) => {
   try {
     const { titre, description, contenu, dateRappel, priorite, type } = req.body;
 
-    // Trouver le partenaire
-    const partenaire = await Utilisateur.findOne({ 
-      _id: { $ne: req.utilisateur.id } 
-    });
-
+    // Trouver le partenaire réel du couple
+    const currentUser = await Utilisateur.findById(req.utilisateur.id);
+    if (!currentUser || !currentUser.partenaire) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Partenaire non trouvé' 
+      });
+    }
+    const partenaire = await Utilisateur.findById(currentUser.partenaire);
     if (!partenaire) {
       return res.status(404).json({ 
         success: false,
