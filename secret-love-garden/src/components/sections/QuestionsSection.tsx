@@ -78,7 +78,9 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         try {
           const reponseResponse = await questionService.getReponseUtilisateur(response.data._id);
           setReponseExistante(reponseResponse.data.texte);
-        } catch (error) {
+        } catch (error: any) {
+          // Log détaillé de l'erreur
+          console.error('Erreur lors de la récupération de la réponse existante à la question du jour:', error, error?.response?.status, error?.response?.data);
           // Pas de réponse existante, c'est normal
           setReponseExistante("");
         }
@@ -404,7 +406,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                   <div className="bg-green-50 p-4 sm:p-6 rounded-xl border border-green-200">
                     <div className="flex items-center mb-3">
                       <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                      <span className="font-medium text-green-800">Votre réponse</span>
+                      <span className="font-medium text-green-800">Vous avez déjà répondu à cette question</span>
                     </div>
                     <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
                       {reponseExistante}

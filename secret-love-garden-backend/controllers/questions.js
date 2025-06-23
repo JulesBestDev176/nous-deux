@@ -65,13 +65,19 @@ exports.soumettreReponse = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de question invalide' });
     }
 
-    // Vérifier que la question existe
-    const questionExist = await Question.exists({ _id: questionId });
-    if (!questionExist) {
+    // Vérifier que la question existe et qu'elle est de type "systeme"
+    const question = await Question.findOne({ _id: questionId, categorie: 'systeme' });
+    if (!question) {
       return res.status(404).json({
         success: false,
-        message: 'Question non trouvée'
+        message: 'Question non trouvée ou non autorisée'
       });
+    }
+
+    // Vérifier si l'utilisateur a déjà répondu à cette question
+    const dejaRepondu = await Reponse.findOne({ question: questionId, utilisateur: req.utilisateur.id });
+    if (dejaRepondu) {
+      return res.status(400).json({ success: false, message: 'Vous avez déjà répondu à cette question.' });
     }
 
     const reponse = await Reponse.create({
