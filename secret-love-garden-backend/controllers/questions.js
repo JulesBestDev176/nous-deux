@@ -277,30 +277,44 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
     }
     const partenaireId = utilisateurConnecte.partenaire;
 
-    // 1. Récupérer toutes les questions personnalisées ET système, avec leur créateur
-    const questions = await Question.find({ categorie: { $in: ['utilisateur', 'systeme'] } })
-      .populate('createur', 'nom')
-      .sort({ dateCreation: -1 })
-      .lean();
+    // 1. Récupérer toutes les questions qui ont AU MOINS une réponse du couple
+    const questionsAvecReponses = await Question.aggregate([
+      {
+        $match: { categorie: { $in: ['utilisateur', 'systeme'] } }
+      },
+      {
+        $lookup: {
+          from: 'reponses',
+          let: { questionId: '$_id' },
+          pipeline: [
+            { $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$question', '$$questionId'] },
+                    { $in: ['$utilisateur', [utilisateurConnecte._id, partenaireId]] }
+                  ]
+                }
+              }
+            },
+            { $sort: { dateReponse: 1 } }
+          ],
+          as: 'reponses'
+        }
+      },
+      {
+        $match: { 'reponses.0': { $exists: true } }
+      },
+      {
+        $sort: { dateCreation: -1 }
+      }
+    ]);
 
-    // 2. Pour chaque question, trouver les réponses du couple
-    const questionsAvecReponses = await Promise.all(
-      questions.map(async (question) => {
-        const reponses = await Reponse.find({
-          question: question._id,
-          utilisateur: { $in: [utilisateurConnecte._id, partenaireId] }
-        })
-        .populate('utilisateur', 'nom')
-        .sort({ dateReponse: 'asc' })
-        .lean();
-        
-        return { ...question, reponses };
-      })
-    );
-    
+    // Peupler le créateur (si besoin)
+    const questionsAvecCreateur = await Question.populate(questionsAvecReponses, { path: 'createur', select: 'nom' });
+
     res.status(200).json({
       success: true,
-      data: questionsAvecReponses
+      data: questionsAvecCreateur
     });
 
   } catch (error) {
