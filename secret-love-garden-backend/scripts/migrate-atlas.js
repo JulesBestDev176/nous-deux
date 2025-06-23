@@ -381,7 +381,7 @@ async function migrer() {
     console.error('\n❌ Erreur de migration :', error.message);
     throw error;
   } finally {
-    await mongoose.connection.close();
+    await mongoose.connection.close();//hhdh
     console.log('\n📡 Connexion fermée');
   }
 }
