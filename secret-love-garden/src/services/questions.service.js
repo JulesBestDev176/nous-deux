@@ -101,6 +101,20 @@ const getQuestionsAvecReponsesCouple = async () => {
   }
 };
 
+// Nouvelle méthode pour récupérer les questions personnalisées avec les réponses du couple
+const getQuestionsPersonnaliseesAvecReponses = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/questions/personnalisees-avec-reponses`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des questions personnalisées avec réponses:', error);
+    throw error.response?.data || error;
+  }
+};
+
 const supprimerQuestion = async (questionId) => {
   try {
     const token = localStorage.getItem('token');
@@ -122,5 +136,6 @@ export default {
   getQuestionsPersonnalisees,
   getReponsesPartenaire,
   getQuestionsAvecReponsesCouple,
+  getQuestionsPersonnaliseesAvecReponses,
   supprimerQuestion
 };

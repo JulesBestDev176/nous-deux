@@ -151,4 +151,13 @@ router.delete(
   questionController.supprimerQuestion
 );
 
+// 🆕 @route   GET /api/questions/personnalisees-avec-reponses
+// @desc    Récupérer toutes les questions personnalisées avec les réponses du couple
+// @access  Privé
+router.get(
+  '/personnalisees-avec-reponses',
+  protegerRoutes,
+  questionController.getQuestionsPersonnaliseesAvecReponses
+);
+
 module.exports = router;

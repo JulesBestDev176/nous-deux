@@ -66,7 +66,6 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       items: [
         { id: "gallery", label: "Galerie", icon: Camera },
         { id: "questions", label: "Questions", icon: MessageCircle },
-        { id: "messages", label: "Messages", icon: Mail },
       ]
     },
     {
@@ -99,7 +98,6 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const allMenuItems = [
     { id: "gallery", label: "Galerie d'amour", icon: Camera },
     { id: "questions", label: "Questions couple", icon: MessageCircle },
-    { id: "messages", label: "Messages d'amour", icon: Mail },
     { id: "custom-questions", label: "Mes questions", icon: Edit },
     { id: "objectifs", label: "Objectifs", icon: Target },
     { id: "reminders", label: "Rappels", icon: Bell },
@@ -167,8 +165,6 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         return <QuestionsSection {...commonProps} toast={toastForGalerieSection} />;
       case "objectifs":
         return <ObjectifsSection {...commonProps} />;
-      case "messages":
-        return <MessagesSection {...commonProps} />;
       case "reminders":
         return <RemindersSection {...commonProps} />;
       case "timeline":

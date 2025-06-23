@@ -375,3 +375,58 @@ exports.supprimerQuestion = async (req, res) => {
     });
   }
 };
+
+// 🆕 NOUVELLE FONCTION: Récupérer les questions personnalisées avec les réponses du couple
+exports.getQuestionsPersonnaliseesAvecReponses = async (req, res) => {
+  try {
+    const utilisateurConnecte = await Utilisateur.findById(req.utilisateur.id);
+    if (!utilisateurConnecte || !utilisateurConnecte.partenaire) {
+      return res.status(404).json({ success: false, message: 'Utilisateur ou partenaire non trouvé' });
+    }
+    const partenaireId = utilisateurConnecte.partenaire;
+
+    // Récupérer toutes les questions personnalisées qui ont AU MOINS une réponse du couple
+    const questionsAvecReponses = await Question.aggregate([
+      { $match: { categorie: 'utilisateur' } },
+      { $lookup: {
+          from: 'reponses',
+          let: { questionId: '$_id' },
+          pipeline: [
+            { $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$question', '$$questionId'] },
+                    { $in: ['$utilisateur', [utilisateurConnecte._id, partenaireId]] }
+                  ]
+                }
+              }
+            },
+            { $sort: { dateReponse: 1 } },
+            { $lookup: {
+                from: 'utilisateurs',
+                localField: 'utilisateur',
+                foreignField: '_id',
+                as: 'utilisateurObj'
+            }},
+            { $unwind: '$utilisateurObj' },
+            { $addFields: { utilisateur: '$utilisateurObj' } },
+            { $project: { utilisateurObj: 0 } }
+          ],
+          as: 'reponses'
+        }
+      },
+      { $sort: { dateCreation: -1 } }
+    ]);
+
+    // Peupler le créateur (si besoin)
+    const questionsAvecCreateur = await Question.populate(questionsAvecReponses, { path: 'createur', select: 'nom' });
+
+    res.status(200).json({
+      success: true,
+      data: questionsAvecCreateur
+    });
+  } catch (error) {
+    console.error('Erreur getQuestionsPersonnaliseesAvecReponses:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};

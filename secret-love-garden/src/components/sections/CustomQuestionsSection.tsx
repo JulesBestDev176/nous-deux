@@ -188,7 +188,7 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
 
   const fetchQuestionsPersonnalisees = async () => {
     try {
-      const res = await questionService.getQuestionsAvecReponsesCouple();
+      const res = await questionService.getQuestionsPersonnaliseesAvecReponses();
       setQuestionsPersonnalisees(res.data || []);
     } catch (error) {
       toast({
@@ -362,9 +362,9 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
         )}
 
         {/* Liste des questions */}
-        {questionsPersonnalisees.length > 0 ? (
+        {questionsPersonnalisees.filter(q => q.categorie === 'utilisateur').length > 0 ? (
           <div className="space-y-4">
-            {questionsPersonnalisees.map((question) => (
+            {questionsPersonnalisees.filter(q => q.categorie === 'utilisateur').map((question) => (
               <QuestionPersonnalisee 
                 key={question._id} 
                 question={question} 
