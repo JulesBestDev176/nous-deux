@@ -271,154 +271,45 @@ exports.getQuestionsPersonnalisees = async (req, res) => {
 // 🆕 NOUVELLE FONCTION: Récupérer les questions avec les réponses du couple
 exports.getQuestionsAvecReponsesCouple = async (req, res) => {
   try {
-    console.log('🔍 Début getQuestionsAvecReponsesCouple pour utilisateur:', req.utilisateur.id);
-    
-    // 1. Récupérer l'utilisateur connecté avec son partenaire
-    const utilisateurConnecte = await Utilisateur.findById(req.utilisateur.id).populate('partenaire');
-    
-    if (!utilisateurConnecte) {
-      return res.status(404).json({
-        success: false,
-        message: 'Utilisateur non trouvé'
-      });
+    const utilisateurConnecte = await Utilisateur.findById(req.utilisateur.id);
+    if (!utilisateurConnecte || !utilisateurConnecte.partenaire) {
+      return res.status(404).json({ success: false, message: 'Utilisateur ou partenaire non trouvé' });
     }
+    const partenaireId = utilisateurConnecte.partenaire;
 
-    console.log('👤 Utilisateur connecté:', {
-      id: utilisateurConnecte._id,
-      nom: utilisateurConnecte.nom,
-      partenaireId: utilisateurConnecte.partenaire?._id,
-      partenaireNom: utilisateurConnecte.partenaire?.nom
-    });
+    // 1. Récupérer toutes les questions personnalisées, avec leur créateur
+    const questions = await Question.find({ categorie: 'utilisateur' })
+      .populate('createur', 'nom')
+      .sort({ dateCreation: -1 })
+      .lean();
 
-    if (!utilisateurConnecte.partenaire) {
-      return res.status(400).json({
-        success: false,
-        message: 'Aucun partenaire associé à ce compte'
-      });
-    }
-
-    const partenaireId = utilisateurConnecte.partenaire._id;
-    const utilisateurId = utilisateurConnecte._id;
-
-    // 2. Récupérer toutes les questions qui ont au moins une réponse de l'un des deux partenaires
-    const questionsAvecReponses = await Question.aggregate([
-      {
-        // Étape 1: Joindre les réponses
-        $lookup: {
-          from: 'reponses',
-          localField: '_id',
-          foreignField: 'question',
-          as: 'toutesReponses'
-        }
-      },
-      {
-        // Étape 2: Filtrer les questions qui ont une réponse du couple
-        $match: {
-          'toutesReponses.utilisateur': { $in: [utilisateurId, partenaireId] }
-        }
-      },
-      {
-        // Étape 3: Créer un champ avec seulement les réponses du couple
-        $addFields: {
-          reponses: {
-            $filter: {
-              input: '$toutesReponses',
-              as: 'reponse',
-              cond: { $in: ['$$reponse.utilisateur', [utilisateurId, partenaireId]] }
-            }
-          }
-        }
-      },
-      // === DEBUT DE LA NOUVELLE LOGIQUE DE POPULATION ===
-      {
-        // Étape 4: Déconstruire le tableau des réponses pour traiter chaque réponse
-        $unwind: {
-          path: '$reponses',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        // Étape 5: "Populer" l'utilisateur de chaque réponse
-        $lookup: {
-          from: 'utilisateurs',
-          localField: 'reponses.utilisateur',
-          foreignField: '_id',
-          as: 'reponses.utilisateur'
-        }
-      },
-      {
-        // Étape 6: Remplacer le tableau utilisateur par le premier objet (et unique)
-        $addFields: {
-          'reponses.utilisateur': { $arrayElemAt: ['$reponses.utilisateur', 0] }
-        }
-      },
-      {
-        // Étape 7: Regrouper par question pour reformer les documents
-        $group: {
-          _id: '$_id',
-          doc: { $first: '$$ROOT' },
-          reponses: { $push: '$reponses' }
-        }
-      },
-      {
-        // Étape 8: Remodeler le document final
-        $replaceRoot: {
-          newRoot: {
-            question: {
-              _id: '$doc._id',
-              texte: '$doc.texte',
-              categorie: '$doc.categorie',
-              dateCreation: '$doc.dateCreation'
-            },
-            reponses: '$reponses'
-          }
-        }
-      },
-       {
-        // Étape 9: Retirer les champs sensibles de l'utilisateur
-        $project: {
-          'reponses.utilisateur.motDePasse': 0,
-          'reponses.utilisateur.email': 0,
-          'reponses.utilisateur.partenaire': 0,
-          'reponses.utilisateur.dateCreation': 0,
-          'reponses.utilisateur.__v': 0,
-        }
-      },
-      {
-        // Étape 10: Trier par date de création de la question
-        $sort: { 'question.dateCreation': -1 }
-      }
-    ]);
-
-    console.log(`📊 ${questionsAvecReponses.length} questions trouvées avec réponses du couple`);
+    // 2. Pour chaque question, trouver les réponses du couple
+    const questionsAvecReponses = await Promise.all(
+      questions.map(async (question) => {
+        const reponses = await Reponse.find({
+          question: question._id,
+          utilisateur: { $in: [utilisateurConnecte._id, partenaireId] }
+        })
+        .populate('utilisateur', 'nom')
+        .sort({ dateReponse: 'asc' })
+        .lean();
+        
+        return { ...question, reponses };
+      })
+    );
     
-    // Log détaillé pour debug
-    questionsAvecReponses.forEach((item, index) => {
-      console.log(`📝 Question ${index + 1}:`, {
-        questionId: item.question._id,
-        texte: item.question.texte.substring(0, 50) + '...',
-        nombreReponses: item.reponses.length,
-        auteurs: item.reponses.map(r => r.utilisateur.nom)
-      });
-    });
-
     res.status(200).json({
       success: true,
-      count: questionsAvecReponses.length,
       data: questionsAvecReponses
     });
 
   } catch (error) {
-    console.error('❌ Erreur dans getQuestionsAvecReponsesCouple:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération des réponses du couple',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Erreur getQuestionsAvecReponsesCouple:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 };
 
-// 🆕 NOUVELLE FONCTION: Supprimer une question
+// �� NOUVELLE FONCTION: Supprimer une question
 exports.supprimerQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
