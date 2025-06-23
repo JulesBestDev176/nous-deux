@@ -105,277 +105,6 @@ interface JeuxSectionProps {
   toast: (toast: Toast) => void;
 }
 
-const iconMap: Record<string, React.ComponentType<unknown>> = {
-  BrainCircuit,
-  GitCompareArrows,
-  Users,
-  Heart,
-  MessageSquare,
-  Camera,
-  Lightbulb,
-  Smile,
-  Zap,
-  Key
-};
-
-const getQuestionsACorreger = (partie: Partie, currentUser: CurrentUser): Question[] => {
-  if (!partie.questions) return [];
-  return partie.questions.filter((q) => 
-    q.sujet === currentUser.id && 
-    q.reponduParSujet && 
-    q.reponduParDevineur && 
-    !q.corrigePar
-  );
-};
-
-interface InterfaceJeuProps {
-  partieEnCours: Partie;
-  currentUser: CurrentUser;
-  partenaire: Partenaire;
-  isMobile: boolean;
-  jeuxDisponibles: JeuDisponible[];
-  questionActuelle: number;
-  vueCorrection: boolean;
-  setVueCorrection: (value: boolean) => void;
-  reponseInput: string;
-  setReponseInput: (value: string) => void;
-  soumettreReponse: () => Promise<void>;
-  corrigerReponse: (index: number, correct: boolean) => Promise<void>;
-  setPartieEnCours: (partie: Partie | null) => void;
-  isSubmitting: boolean;
-}
-
-const InterfaceJeu: React.FC<InterfaceJeuProps> = ({
-  partieEnCours,
-  currentUser,
-  partenaire,
-  isMobile,
-  jeuxDisponibles,
-  questionActuelle,
-  vueCorrection,
-  setVueCorrection,
-  reponseInput,
-  setReponseInput,
-  soumettreReponse,
-  corrigerReponse,
-  setPartieEnCours,
-  isSubmitting
-}) => {
-  const jeuConfig = jeuxDisponibles.find(j => j.id === partieEnCours.type);
-  
-  const questionsActuelles = partieEnCours.questions && partieEnCours.questions.length > 0 
-    ? partieEnCours.questions 
-    : partieEnCours.questionsSimples;
-    
-  const question = questionsActuelles?.[questionActuelle];
-  const isCorrectionGame = !!(question && 'sujet' in question);
-
-  const progress = questionsActuelles ? ((questionActuelle + 1) / questionsActuelles.length) * 100 : 0;
-  
-  let aRepondu = false;
-  let partenaireARepondu = false;
-  let maReponse: string | undefined = '';
-
-  if (isCorrectionGame && question) {
-    const estSujet = question.sujet?.toString?.() === currentUser.id;
-    const estDevineur = question.devineur?.toString?.() === currentUser.id;
-    
-    aRepondu = (estSujet && !!question.reponduParSujet) || (estDevineur && !!question.reponduParDevineur);
-    partenaireARepondu = (estSujet && !!question.reponduParDevineur) || (estDevineur && !!question.reponduParSujet);
-    maReponse = estSujet ? question.reponseSujet : question.reponseDevineur;
-  } else if (question) {
-    const estUtilisateur1 = partieEnCours.scores.utilisateur1.utilisateur.id?.toString?.() === currentUser.id;
-    aRepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur1 : question.reponduParUtilisateur2);
-    partenaireARepondu = !!(estUtilisateur1 ? question.reponduParUtilisateur2 : question.reponduParUtilisateur1);
-    maReponse = estUtilisateur1 ? question.reponseUtilisateur1 : question.reponseUtilisateur2;
-  }
-
-  const IconComponent = iconMap[jeuConfig?.icon || 'Gamepad2'] || Gamepad2;
-  const questionsACorriger = getQuestionsACorreger(partieEnCours, currentUser);
-
-  return (
-    <div className="space-y-6">
-      {/* Sélecteur de vue pour les jeux avec correction */}
-      {isCorrectionGame && (
-        <div className={`flex mb-4 ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
-          <Button
-            variant={!vueCorrection ? 'default' : 'outline'}
-            onClick={() => setVueCorrection(false)}
-            className={`${!vueCorrection ? 'bg-blue-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''}`}
-          >
-            <User className="w-4 h-4 mr-2" />
-            Jouer ({questionsActuelles?.length || 0} questions)
-          </Button>
-          <Button
-            variant={vueCorrection ? 'default' : 'outline'}
-            onClick={() => setVueCorrection(true)}
-            className={`${vueCorrection ? 'bg-orange-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''} relative`}
-          >
-            <ClipboardCheck className="w-4 h-4 mr-2" />
-            Correction ({questionsACorriger.length})
-            {questionsACorriger.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {questionsACorriger.length}
-              </span>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {!vueCorrection ? (
-        // VUE NORMALE DU JEU
-        <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-          {/* Interface du jeu normale */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-blue-800 flex items-center">
-                <IconComponent className="w-6 h-6 mr-2" />
-                {jeuConfig?.nom}
-              </h3>
-              <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                {questionActuelle + 1}/{questionsActuelles?.length || 0}
-              </span>
-            </div>
-            
-            {/* Barre de progression */}
-            <div className="w-full bg-blue-200 rounded-full h-3">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Question et réponse */}
-          {question && (
-            <div className="mb-6">
-              <div className="bg-white p-4 rounded-lg border border-blue-200 mb-4">
-                <h4 className="font-medium text-gray-800 mb-2 text-lg">
-                  {question.questionText}
-                </h4>
-                
-                {/* Interface de réponse */}
-                {!aRepondu ? (
-                  <div className="space-y-3">
-                    <Input
-                      value={reponseInput}
-                      onChange={(e) => setReponseInput(e.target.value)}
-                      placeholder="Votre réponse..."
-                      className="border-blue-200 focus:border-blue-500"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && reponseInput.trim()) {
-                          soumettreReponse();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={soumettreReponse}
-                      disabled={!reponseInput.trim() || isSubmitting}
-                      className="w-full bg-blue-500 hover:bg-blue-600"
-                    >
-                      Valider ma réponse
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3 text-sm">
-                    <div className="bg-gray-100 p-3 rounded-lg border border-gray-200">
-                        <strong className="text-gray-700">Votre réponse :</strong>
-                        <p className="text-gray-600 mt-1">{maReponse}</p>
-                    </div>
-                    {!partenaireARepondu ? (
-                        <div className="bg-yellow-100 p-3 rounded-lg border border-yellow-200 flex items-center">
-                            <Clock className="w-4 h-4 mr-2 text-yellow-600" />
-                            <p className="text-yellow-700">En attente de la réponse de {partenaire.nom}...</p>
-                        </div>
-                    ) : (
-                      <div className="bg-green-100 p-3 rounded-lg border border-green-200 flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                          <p className="text-green-700">{partenaire.nom} a aussi répondu !</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Contrôles */}
-          <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
-            <Button
-              variant="ghost"
-              onClick={() => setPartieEnCours(null)}
-              className="text-blue-600"
-            >
-              Quitter la partie
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        // VUE CORRECTION
-        <div className="space-y-6">
-          {/* Section : Questions à corriger */}
-          <Card className="p-6 border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50">
-            <h3 className="font-semibold text-orange-800 mb-4 flex items-center">
-              <ClipboardCheck className="w-6 h-6 mr-2" />
-              Réponses de {partenaire.nom} à corriger ({questionsACorriger.length})
-            </h3>
-            
-            {questionsACorriger.length > 0 ? (
-              <div className="space-y-4">
-                {questionsACorriger.map((q) => {
-                  const realIndex = partieEnCours.questions?.findIndex(question => question === q) || 0;
-                  return (
-                    <div key={realIndex} className="bg-white p-4 rounded-lg border border-orange-200">
-                      <div className="mb-3">
-                        <h5 className="font-medium text-gray-800 mb-2">
-                          Question : {q.questionText}
-                        </h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="bg-green-50 p-3 rounded border border-green-200">
-                            <strong className="text-green-800">Votre vraie réponse :</strong>
-                            <p className="text-green-700 mt-1">{q.reponseSujet}</p>
-                          </div>
-                          <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                            <strong className="text-blue-800">Devinette de {partenaire.nom} :</strong>
-                            <p className="text-blue-700 mt-1">{q.reponseDevineur}</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={() => corrigerReponse(realIndex, true)}
-                          className="bg-green-500 hover:bg-green-600 flex-1"
-                        >
-                          <ThumbsUp className="w-4 h-4 mr-2" />
-                          Correct ! (+{q.points || 10} pts)
-                        </Button>
-                        <Button
-                          onClick={() => corrigerReponse(realIndex, false)}
-                          className="bg-red-500 hover:bg-red-600 flex-1"
-                        >
-                          <ThumbsDown className="w-4 h-4 mr-2" />
-                          Incorrect (0 pt)
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-orange-600">
-                <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Aucune réponse à corriger pour le moment</p>
-                <p className="text-sm mt-2">Les réponses apparaîtront ici quand votre partenaire aura joué</p>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-};
-
 const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMobile, toast }) => {
   const [jeuxDisponibles, setJeuxDisponibles] = useState<JeuDisponible[]>([]);
   const [historiqueParties, setHistoriqueParties] = useState<Partie[]>([]);
@@ -395,8 +124,20 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
   });
   const [vueCorrection, setVueCorrection] = useState<boolean>(false);
   const [refreshPartie, setRefreshPartie] = useState<number>(0);
-  const [quizTermine, setQuizTermine] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Mapping des icônes
+  const iconMap: Record<string, React.ComponentType<unknown>> = {
+    BrainCircuit,
+    GitCompareArrows,
+    Users,
+    Heart,
+    MessageSquare,
+    Camera,
+    Lightbulb,
+    Smile,
+    Zap,
+    Key
+  };
 
   // Fonctions API
   const fetchJeuxDisponibles = async (): Promise<void> => {
@@ -496,72 +237,31 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
       console.error('Erreur démarrage partie:', error);
       toast({
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de démarrer la partie",
+        description: (error instanceof Error ? error.message : "Impossible de démarrer la partie"),
         variant: "destructive",
       });
     }
   };
 
-  const findNextUnansweredQuestion = (partie, currentUser) => {
-    // Pour jeux à correction
-    if (partie.questions && partie.questions.length > 0) {
-      for (let i = 0; i < partie.questions.length; i++) {
-        const q = partie.questions[i];
-        const estSujet = q.sujet?.toString?.() === currentUser.id;
-        const estDevineur = q.devineur?.toString?.() === currentUser.id;
-        if ((estSujet && !q.reponduParSujet) || (estDevineur && !q.reponduParDevineur)) {
-          return i;
-        }
-      }
-    }
-    // Pour jeux simples
-    if (partie.questionsSimples && partie.questionsSimples.length > 0) {
-      for (let i = 0; i < partie.questionsSimples.length; i++) {
-        const q = partie.questionsSimples[i];
-        const estUtilisateur1 = currentUser.id === partie.scores.utilisateur1.utilisateur.id?.toString?.();
-        if ((estUtilisateur1 && !q.reponduParUtilisateur1) || (!estUtilisateur1 && !q.reponduParUtilisateur2)) {
-          return i;
-        }
-      }
-    }
-    return -1;
-  };
-
   const soumettreReponse = async (): Promise<void> => {
-    if (!reponseInput.trim() || !partieEnCours || isSubmitting) return;
-    setIsSubmitting(true);
+    if (!reponseInput.trim() || !partieEnCours) return;
+    
     try {
       const res = await jeuService.soumettreReponse(
         partieEnCours._id,
         questionActuelle,
         reponseInput.trim()
       );
+      
       setPartieEnCours(res.data);
       setReponseInput('');
-
-      // Passage automatique à la prochaine question non répondue
-      const nextIndex = findNextUnansweredQuestion(res.data, currentUser);
-      if (nextIndex !== -1) {
-        setQuestionActuelle(nextIndex);
-      } else {
-        setQuizTermine(true);
-      }
-      setVueCorrection(false);
-      setShowQuizSelection(false);
-      setIsSubmitting(false);
       
-      // Trouver le nom du jeu pour la notification
-      let nomJeu = 'Jeu';
-      const jeuConfig = jeuxDisponibles.find(j => j.id === res.data.type);
-      if (jeuConfig) {
-        nomJeu = jeuConfig.nom;
-      }
       toast({
         title: "Réponse envoyée ! ✅",
         description: "En attente de votre partenaire...",
       });
+      
     } catch (error: unknown) {
-      setIsSubmitting(false);
       console.error('Erreur soumission réponse:', error);
       toast({
         title: "Erreur",
@@ -655,7 +355,7 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
   };
 
   // Fonctions pour filtrer les questions selon le statut
-  const getQuestionsACorregerLegacy = (): Question[] => {
+  const getQuestionsACorreger = (): Question[] => {
     if (!partieEnCours?.questions) return [];
     
     return partieEnCours.questions.filter((q) => 
@@ -873,12 +573,234 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
     );
   };
 
-  interface DefiCardProps {
-    defi: Defi;
-    commencerDefi: (defi: Defi) => void;
-  }
+  const InterfaceJeu: React.FC = () => {
+    if (!partieEnCours) return null;
+    
+    const jeuConfig = jeuxDisponibles.find(j => j.id === partieEnCours.type);
+    const questionsActuelles = jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple' ? 
+      partieEnCours.questions : partieEnCours.questionsSimples;
+    const question = questionsActuelles?.[questionActuelle];
+    const progress = questionsActuelles ? ((questionActuelle + 1) / questionsActuelles.length) * 100 : 0;
+    
+    let estSujet = false;
+    let estDevineur = false;
+    let peutRepondre = false;
 
-  const DefiCard: React.FC<DefiCardProps> = ({ defi, commencerDefi }) => (
+    if (jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') {
+      estSujet = question?.sujet === currentUser.id;
+      estDevineur = question?.devineur === currentUser.id;
+      peutRepondre = (estSujet && !question?.reponduParSujet) || 
+                    (estDevineur && !question?.reponduParDevineur);
+    } else {
+      const estUtilisateur1 = currentUser.id === partieEnCours.scores.utilisateur1.utilisateur.id;
+      peutRepondre = estUtilisateur1 ? !question?.reponduParUtilisateur1 : !question?.reponduParUtilisateur2;
+    }
+
+    const IconComponent = iconMap[jeuConfig?.icon || 'Gamepad2'] || Gamepad2;
+
+    return (
+      <div className="space-y-6">
+        {/* Sélecteur de vue pour les jeux avec correction */}
+        {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
+          <div className={`flex mb-4 ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+            <Button
+              variant={!vueCorrection ? 'default' : 'outline'}
+              onClick={() => setVueCorrection(false)}
+              className={`${!vueCorrection ? 'bg-blue-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''}`}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Jouer ({questionsActuelles?.length || 0} questions)
+            </Button>
+            <Button
+              variant={vueCorrection ? 'default' : 'outline'}
+              onClick={() => setVueCorrection(true)}
+              className={`${vueCorrection ? 'bg-orange-500 text-white' : 'text-gray-700'} ${isMobile ? 'w-full' : ''} relative`}
+            >
+              <ClipboardCheck className="w-4 h-4 mr-2" />
+              Correction ({getQuestionsACorreger().length})
+              {getQuestionsACorreger().length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {getQuestionsACorreger().length}
+                </span>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {!vueCorrection ? (
+          // VUE NORMALE DU JEU
+          <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            {/* Interface du jeu normale */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-blue-800 flex items-center">
+                  <IconComponent className="w-6 h-6 mr-2" />
+                  {jeuConfig?.nom}
+                </h3>
+                <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                  {questionActuelle + 1}/{questionsActuelles?.length || 0}
+                </span>
+              </div>
+              
+              {/* Barre de progression */}
+              <div className="w-full bg-blue-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Question et réponse */}
+            {question && (
+              <div className="mb-6">
+                <div className="bg-white p-4 rounded-lg border border-blue-200 mb-4">
+                  <h4 className="font-medium text-gray-800 mb-2 text-lg">
+                    {question.questionText}
+                  </h4>
+                  
+                  {/* Indicateur de rôle pour jeux avec correction */}
+                  {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
+                    <div className="mb-2">
+                      <span className="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {estSujet
+                          ? "Vous êtes le sujet"
+                          : estDevineur
+                          ? "Vous êtes le devineur"
+                          : "Spectateur"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Réponses affichées selon le rôle */}
+                  {(jeuConfig?.needsCorrection || partieEnCours.type === 'quiz-couple') && (
+                    <div className="mb-2">
+                      {estSujet && question.reponduParSujet && (
+                        <div className="text-green-700 text-sm mb-1">
+                          Votre réponse : <span className="font-semibold">{question.reponseSujet}</span>
+                        </div>
+                      )}
+                      {estDevineur && question.reponduParDevineur && (
+                        <div className="text-blue-700 text-sm mb-1">
+                          Votre devinette : <span className="font-semibold">{question.reponseDevineur}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Champ de réponse */}
+                {peutRepondre && (
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      value={reponseInput}
+                      onChange={(e) => setReponseInput(e.target.value)}
+                      placeholder="Votre réponse..."
+                      className="border-blue-200 focus:border-blue-500"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") soumettreReponse();
+                      }}
+                    />
+                    <Button
+                      onClick={soumettreReponse}
+                      className="bg-blue-500 hover:bg-blue-600"
+                      disabled={!reponseInput.trim()}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Envoyer
+                    </Button>
+                  </div>
+                )}
+
+                {/* Message d'attente */}
+                {!peutRepondre && (
+                  <div className="text-center text-blue-600 text-sm mt-4">
+                    {question.reponduParSujet && question.reponduParDevineur
+                      ? "En attente de correction..."
+                      : "En attente de la réponse de votre partenaire..."}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Contrôles */}
+            <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
+              <Button
+                variant="ghost"
+                onClick={() => setPartieEnCours(null)}
+                className="text-blue-600"
+              >
+                Quitter la partie
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          // VUE CORRECTION
+          <div className="space-y-6">
+            {/* Section : Questions à corriger */}
+            <Card className="p-6 border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50">
+              <h3 className="font-semibold text-orange-800 mb-4 flex items-center">
+                <ClipboardCheck className="w-6 h-6 mr-2" />
+                Réponses de {partenaire.nom} à corriger ({getQuestionsACorreger().length})
+              </h3>
+              
+              {getQuestionsACorreger().length > 0 ? (
+                <div className="space-y-4">
+                  {getQuestionsACorreger().map((q, qIndex) => {
+                    const realIndex = partieEnCours.questions?.findIndex(question => question === q) || 0;
+                    return (
+                      <div key={realIndex} className="bg-white p-4 rounded-lg border border-orange-200">
+                        <div className="mb-3">
+                          <h5 className="font-medium text-gray-800 mb-2">
+                            Question : {q.questionText}
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div className="bg-green-50 p-3 rounded border border-green-200">
+                              <strong className="text-green-800">Votre vraie réponse :</strong>
+                              <p className="text-green-700 mt-1">{q.reponseSujet}</p>
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                              <strong className="text-blue-800">Devinette de {partenaire.nom} :</strong>
+                              <p className="text-blue-700 mt-1">{q.reponseDevineur}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => corrigerReponse(realIndex, true)}
+                            className="bg-green-500 hover:bg-green-600 flex-1"
+                          >
+                            <ThumbsUp className="w-4 h-4 mr-2" />
+                            Correct ! (+{q.points || 10} pts)
+                          </Button>
+                          <Button
+                            onClick={() => corrigerReponse(realIndex, false)}
+                            className="bg-red-500 hover:bg-red-600 flex-1"
+                          >
+                            <ThumbsDown className="w-4 h-4 mr-2" />
+                            Incorrect (0 pt)
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-orange-600">
+                  <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Aucune réponse à corriger pour le moment</p>
+                  <p className="text-sm mt-2">Les réponses apparaîtront ici quand votre partenaire aura joué</p>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const DefiCard: React.FC<{ defi: Defi }> = ({ defi }) => (
     <Card className={`p-4 border transition-all duration-200 ${
       defi.termine ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:shadow-md'
     }`}>
@@ -953,29 +875,7 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
       </CardHeader>
       <CardContent>
         {/* Interface de jeu en cours */}
-        {partieEnCours && !quizTermine && <InterfaceJeu 
-          partieEnCours={partieEnCours}
-          currentUser={currentUser}
-          partenaire={partenaire}
-          isMobile={isMobile}
-          jeuxDisponibles={jeuxDisponibles}
-          questionActuelle={questionActuelle}
-          vueCorrection={vueCorrection}
-          setVueCorrection={setVueCorrection}
-          reponseInput={reponseInput}
-          setReponseInput={setReponseInput}
-          soumettreReponse={soumettreReponse}
-          corrigerReponse={corrigerReponse}
-          setPartieEnCours={setPartieEnCours}
-          isSubmitting={isSubmitting}
-        />}
-        {quizTermine && (
-          <div className="text-center py-12">
-            <Trophy className="w-16 h-16 mx-auto text-pink-400 mb-4" />
-            <h2 className="text-2xl font-bold text-pink-700 mb-2">Quiz terminé !</h2>
-            <p className="text-lg text-gray-700 mb-4">Merci d'avoir joué ensemble !</p>
-          </div>
-        )}
+        {partieEnCours && <InterfaceJeu />}
 
         {/* Sélection des quiz couple */}
         {showQuizSelection && <QuizSelectionModal />}
@@ -1086,7 +986,7 @@ const JeuxSection: React.FC<JeuxSectionProps> = ({ currentUser, partenaire, isMo
 
                 <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   {defisCouple.map(defi => (
-                    <DefiCard key={defi.id} defi={defi} commencerDefi={commencerDefi} />
+                    <DefiCard key={defi.id} defi={defi} />
                   ))}
                 </div>
               </div>

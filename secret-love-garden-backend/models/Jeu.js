@@ -4,19 +4,23 @@ const questionJeuSchema = new mongoose.Schema({
   questionText: { type: String, required: true },
   points: { type: Number, default: 10 },
   
-  // Qui est le sujet de la question (celui qui donne la "vraie" réponse)
+  // Pour les quiz couple: chaque question a 2 instances
+  // Instance 1: Utilisateur1 répond sur Utilisateur2, Utilisateur2 corrige
+  // Instance 2: Utilisateur2 répond sur Utilisateur1, Utilisateur1 corrige
+  
+  // Qui doit donner la vraie réponse (celui sur qui porte la question)
   sujet: { type: mongoose.Schema.Types.ObjectId, ref: 'Utilisateur', required: true },
   reponseSujet: { type: String, default: '' },
+  reponduParSujet: { type: Boolean, default: false },
 
-  // Qui doit deviner la réponse
+  // Qui doit deviner la réponse 
   devineur: { type: mongoose.Schema.Types.ObjectId, ref: 'Utilisateur', required: true },
   reponseDevineur: { type: String, default: '' },
-  
-  // Statut de la question
-  reponduParSujet: { type: Boolean, default: false },
   reponduParDevineur: { type: Boolean, default: false },
+  
+  // Statut de la correction
   estCorrect: { type: Boolean, default: null }, // null = non évalué, true/false après évaluation
-  corrigePar: { type: mongoose.Schema.Types.ObjectId, ref: 'Utilisateur', default: null }, // Qui a fait la correction
+  corrigePar: { type: mongoose.Schema.Types.ObjectId, ref: 'Utilisateur', default: null },
   dateCorrection: { type: Date, default: null }
 }, { _id: false });
 

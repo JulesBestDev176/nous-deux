@@ -41,9 +41,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   
   // États pour le lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     loadImages();
@@ -69,7 +67,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxOpen, currentImageIndex]);
+  }, [lightboxOpen]);
 
   // Prévenir le scroll du body quand le lightbox est ouvert
   useEffect(() => {
@@ -186,8 +184,8 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   };
 
   // Fonctions pour le lightbox
-  const openLightbox = (imageIndex: number) => {
-    setCurrentImageIndex(imageIndex);
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
     setLightboxOpen(true);
   };
 
@@ -196,13 +194,13 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
   };
 
   const goToNext = () => {
-    const newIndex = (currentImageIndex + 1) % images.length;
-    setCurrentImageIndex(newIndex);
+    const newIndex = (lightboxIndex + 1) % images.length;
+    setLightboxIndex(newIndex);
   };
 
   const goToPrevious = () => {
-    const newIndex = (currentImageIndex - 1 + images.length) % images.length;
-    setCurrentImageIndex(newIndex);
+    const newIndex = (lightboxIndex - 1 + images.length) % images.length;
+    setLightboxIndex(newIndex);
   };
 
   // Gestion du swipe pour mobile
@@ -334,7 +332,7 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
     );
   }
 
-  const currentImage = images[currentImageIndex];
+  const currentImage = images[lightboxIndex];
 
   return (
     <div className="space-y-6">
@@ -508,135 +506,51 @@ const GalerieSection = ({ currentUser, partenaire, isMobile, toast }: GallerieSe
         </Card>
       ) : (
         <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
-          {images.map((image, index) => (
-            <Card key={image._id} className="overflow-hidden hover:shadow-lg transition-shadow border-pink-100 group cursor-pointer">
-              <div 
-                className="aspect-square relative"
-                onClick={() => openLightbox(index)}
-              >
-                <SimpleImage
-                  src={getImageUrl(image.url)}
-                  alt={image.legende || "Souvenir"}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  imageId={image._id}
-                />
-                
-                {/* Overlay avec icône de zoom */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                  <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          {images.map((image, index) => {
+            console.log('Photo:', image);
+            return (
+              <Card key={image._id} className="overflow-hidden hover:shadow-lg transition-shadow border-pink-100 group cursor-pointer">
+                <div className="relative w-full h-64 bg-gray-100 flex items-center justify-center" onClick={() => openLightbox(index)}>
+                  <img
+                    src={getImageUrl(image.url) || '/placeholder.svg'}
+                    alt={image.legende || "Souvenir"}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    style={{ maxWidth: 300, maxHeight: 300 }}
+                    onError={e => e.currentTarget.src = '/placeholder.svg'}
+                  />
                 </div>
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <div className="flex items-center text-sm space-x-2">
-                      <User className="w-4 h-4" />
-                      <span>{image.createur?.nom || 'Utilisateur inconnu'}</span>
-                    </div>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 truncate max-w-[180px]">{image.legende || "Souvenir"}</span>
+                    <span className="text-xs text-gray-400 ml-2">{new Date(image.dateCreation).toLocaleDateString()}</span>
                   </div>
-                </div>
-              </div>
-              
-              <CardContent className="p-4">
-                {image.legende && (
-                  <p className="text-gray-700 mb-3 line-clamp-2 text-sm">
-                    {image.legende}
-                  </p>
-                )}
-                
-                <div className="flex items-center text-xs text-gray-500">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  <span>{image.dateCreation ? formatDate(image.dateCreation) : 'Date inconnue'}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      {/* Lightbox Modal */}
-      {lightboxOpen && currentImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      {/* Lightbox */}
+      {lightboxOpen && images[lightboxIndex] && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-80 flex flex-col items-center justify-center cursor-pointer"
           onClick={closeLightbox}
         >
-          {/* Bouton de fermeture */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20 rounded-full p-2"
-          >
-            <X className="w-6 h-6" />
-          </Button>
-
-          {/* Compteur d'images */}
-          <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-            {currentImageIndex + 1} / {images.length}
-          </div>
-
-          {/* Navigation précédente */}
-          {images.length > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                goToPrevious();
-              }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 rounded-full p-3"
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </Button>
-          )}
-
-          {/* Navigation suivante */}
-          {images.length > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                goToNext();
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 rounded-full p-3"
-            >
-              <ChevronRight className="w-8 h-8" />
-            </Button>
-          )}
-
-          {/* Image principale avec gestion du swipe */}
-          <div 
-            className="relative max-w-full max-h-full flex items-center justify-center p-4"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <SimpleImage
-              src={getImageUrl(currentImage.url)}
-              alt={currentImage.legende || "Souvenir"}
-              className="max-w-full max-h-full object-contain"
-              imageId={`lightbox-${currentImage._id}`}
-            />
-            
-            {/* Informations de l'image */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
-              {currentImage.legende && (
-                <p className="text-lg mb-2">
-                  {currentImage.legende}
-                </p>
-              )}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4" />
-                  <span>{currentImage.createur?.nom || 'Utilisateur inconnu'}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>{currentImage.dateCreation ? formatDate(currentImage.dateCreation) : 'Date inconnue'}</span>
-                </div>
-              </div>
-            </div>
+          <img
+            src={getImageUrl(images[lightboxIndex].url) || '/placeholder.svg'}
+            alt={images[lightboxIndex].legende || "Souvenir"}
+            className="max-w-[90vw] max-h-[80vh] object-contain rounded shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              showNext(e);
+            }}
+            style={{ cursor: 'pointer' }}
+          />
+          <div className="mt-4 text-center text-white">
+            <div className="font-semibold text-lg">{images[lightboxIndex].legende || "Souvenir"}</div>
+            <div className="text-xs mt-1">{new Date(images[lightboxIndex].dateCreation).toLocaleDateString()}</div>
+            <div className="text-xs mt-2 opacity-70">Cliquez sur l'image pour passer à la suivante<br/>Cliquez en dehors pour fermer</div>
           </div>
         </div>
       )}

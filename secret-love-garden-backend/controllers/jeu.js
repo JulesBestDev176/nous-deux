@@ -83,13 +83,43 @@ async function genererQuestions(typeJeu, utilisateur1Id, utilisateur2Id) {
     const questionsSelectionnees = shuffle(questions).slice(0, nombreQuestions);
 
     if (jeuConfig.needsCorrection || typeJeu.startsWith('quiz-')) {
-      // Questions avec correction (alternatif qui est le sujet)
-      return questionsSelectionnees.map((question, index) => ({
-        questionText: question.questionText,
-        sujet: index % 2 === 0 ? utilisateur1Id : utilisateur2Id,
-        devineur: index % 2 === 0 ? utilisateur2Id : utilisateur1Id,
-        points: question.points || 10
-      }));
+      // Pour les quiz couple: créer des questions équilibrées
+      // Chaque joueur répond sur lui-même (sujet) et devine sur son partenaire (devineur)
+      const questionsGenerees = [];
+      
+      questionsSelectionnees.forEach((question, index) => {
+        if (index % 2 === 0) {
+          // Utilisateur1 est le sujet (répond sur lui-même), Utilisateur2 devine
+          questionsGenerees.push({
+            questionText: question.questionText,
+            sujet: utilisateur1Id,
+            devineur: utilisateur2Id,
+            points: question.points || 10,
+            reponseSujet: '',
+            reponseDevineur: '',
+            reponduParSujet: false,
+            reponduParDevineur: false,
+            estCorrect: null,
+            corrigePar: null
+          });
+        } else {
+          // Utilisateur2 est le sujet (répond sur lui-même), Utilisateur1 devine
+          questionsGenerees.push({
+            questionText: question.questionText,
+            sujet: utilisateur2Id,
+            devineur: utilisateur1Id,
+            points: question.points || 10,
+            reponseSujet: '',
+            reponseDevineur: '',
+            reponduParSujet: false,
+            reponduParDevineur: false,
+            estCorrect: null,
+            corrigePar: null
+          });
+        }
+      });
+      
+      return questionsGenerees;
     } else {
       // Questions simples
       if (typeJeu === 'tu-preferes') {
@@ -97,13 +127,21 @@ async function genererQuestions(typeJeu, utilisateur1Id, utilisateur2Id) {
           questionText: question.questionText,
           optionA: question.optionA,
           optionB: question.optionB,
-          points: question.points || 5
+          points: question.points || 5,
+          reponseUtilisateur1: '',
+          reponseUtilisateur2: '',
+          reponduParUtilisateur1: false,
+          reponduParUtilisateur2: false
         }));
       }
       
       return questionsSelectionnees.map(question => ({
         questionText: question.questionText,
-        points: question.points || 5
+        points: question.points || 5,
+        reponseUtilisateur1: '',
+        reponseUtilisateur2: '',
+        reponduParUtilisateur1: false,
+        reponduParUtilisateur2: false
       }));
     }
   } catch (error) {
