@@ -65,8 +65,8 @@ exports.soumettreReponse = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de question invalide' });
     }
 
-    // Vérifier que la question existe et qu'elle est de type "systeme"
-    const question = await Question.findOne({ _id: questionId, categorie: 'systeme' });
+    // Vérifier que la question existe et qu'elle est de type "systeme" ou "utilisateur"
+    const question = await Question.findOne({ _id: questionId, categorie: { $in: ['systeme', 'utilisateur'] } });
     if (!question) {
       return res.status(404).json({
         success: false,
