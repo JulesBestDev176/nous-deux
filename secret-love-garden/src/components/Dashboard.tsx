@@ -71,7 +71,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
     {
       title: "🎯 Objectifs",
       items: [
-        { id: "custom-questions", label: "Mes questions", icon: Edit },
+        // { id: "custom-questions", label: "Mes questions", icon: Edit }, // Masqué
         { id: "objectifs", label: "Objectifs", icon: Target },
         { id: "reminders", label: "Rappels", icon: Bell },
       ]
@@ -98,7 +98,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const allMenuItems = [
     { id: "gallery", label: "Galerie d'amour", icon: Camera },
     { id: "questions", label: "Questions couple", icon: MessageCircle },
-    { id: "custom-questions", label: "Mes questions", icon: Edit },
+    // { id: "custom-questions", label: "Mes questions", icon: Edit }, // Masqué
     { id: "objectifs", label: "Objectifs", icon: Target },
     { id: "reminders", label: "Rappels", icon: Bell },
     { id: "calendrier", label: "Calendrier", icon: Calendar },

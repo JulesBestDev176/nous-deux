@@ -68,11 +68,17 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
             <Calendar className="w-3 h-3 mr-1" />
             Créée le {new Date(question.dateCreation).toLocaleDateString()}
           </span>
-          <span className={`px-2 py-1 rounded-full text-xs ${
-            isCreator ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-          }`}>
-            {isCreator ? 'Votre question' : 'Question de votre partenaire'}
-          </span>
+          {question.createur?.nom && (
+            <span className={`px-2 py-1 rounded-full text-xs ${
+              isCreator ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+            }`}>
+              {isCreator
+                ? 'Votre question'
+                : question.createur.nom !== currentUser
+                  ? 'Question de votre partenaire'
+                  : ''}
+            </span>
+          )}
         </div>
       </div>
 
@@ -150,11 +156,12 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
         </div>
       )}
 
-      {/* Afficher la réponse du partenaire si elle existe */}
-      {question.reponses && question.reponses.length > 0 && (
+      {/* Afficher la réponse du partenaire si elle existe et est différente de la mienne */}
+      {question.reponses && question.reponses.length > 0 && reponseExistante && (
         <div className="mt-4 space-y-2">
           {question.reponses
             .filter(r => r.utilisateur?.nom !== currentUser)
+            .filter(r => !(reponseExistante && r.texte === reponseExistante.texte && r.dateReponse === reponseExistante.dateReponse))
             .map((reponsePartenaire, index) => (
               <div key={index} className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                 <div className="flex items-center space-x-2 mb-2">
