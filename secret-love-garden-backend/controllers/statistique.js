@@ -192,25 +192,31 @@ exports.getTendancesHebdomadaires = async (req, res) => {
 
 // Placeholder pour les nouvelles fonctions
 exports.getStatistiquesGenerales = async (req, res) => {
-  res.status(200).json({ success: true, data: { message: "Endpoint 'generales' atteint" } });
+  // Renvoie un objet vide pour les stats générales
+  res.status(200).json({ success: true, data: {} });
 };
 
 exports.getStatistiquesMessages = async (req, res) => {
-  res.status(200).json({ success: true, data: { message: "Endpoint 'messages' atteint" } });
+  // Renvoie un tableau vide pour les graphiques
+  res.status(200).json({ success: true, data: [] });
 };
 
 exports.getStatistiquesActivites = async (req, res) => {
-  res.status(200).json({ success: true, data: { message: "Endpoint 'activites' atteint" } });
+  // Renvoie un tableau vide pour les graphiques
+  res.status(200).json({ success: true, data: [] });
 };
 
 exports.getStatistiquesHumeur = async (req, res) => {
-  res.status(200).json({ success: true, data: { message: "Endpoint 'humeur' (GET) atteint" } });
+  // Renvoie un tableau vide pour les graphiques
+  res.status(200).json({ success: true, data: [] });
 };
 
 exports.ajouterHumeur = async (req, res) => {
-  res.status(201).json({ success: true, data: { message: "Endpoint 'humeur' (POST) atteint" } });
+  // Renvoie un objet vide pour l'instant
+  res.status(201).json({ success: true, data: {} });
 };
 
 exports.getTempsEnsemble = async (req, res) => {
-  res.status(200).json({ success: true, data: { message: "Endpoint 'temps-ensemble' atteint" } });
+  // Renvoie un objet vide pour l'instant
+  res.status(200).json({ success: true, data: {} });
 };
