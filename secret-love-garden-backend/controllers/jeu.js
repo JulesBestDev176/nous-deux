@@ -83,40 +83,36 @@ async function genererQuestions(typeJeu, utilisateur1Id, utilisateur2Id) {
     const questionsSelectionnees = shuffle(questions).slice(0, nombreQuestions);
 
     if (jeuConfig.needsCorrection || typeJeu.startsWith('quiz-')) {
-      // Pour les quiz couple: créer des questions équilibrées
-      // Chaque joueur répond sur lui-même (sujet) et devine sur son partenaire (devineur)
+      // Pour les quiz couple: chaque question a 2 instances (une par direction)
       const questionsGenerees = [];
       
-      questionsSelectionnees.forEach((question, index) => {
-        if (index % 2 === 0) {
-          // Utilisateur1 est le sujet (répond sur lui-même), Utilisateur2 devine
-          questionsGenerees.push({
-            questionText: question.questionText,
-            sujet: utilisateur1Id,
-            devineur: utilisateur2Id,
-            points: question.points || 10,
-            reponseSujet: '',
-            reponseDevineur: '',
-            reponduParSujet: false,
-            reponduParDevineur: false,
-            estCorrect: null,
-            corrigePar: null
-          });
-        } else {
-          // Utilisateur2 est le sujet (répond sur lui-même), Utilisateur1 devine
-          questionsGenerees.push({
-            questionText: question.questionText,
-            sujet: utilisateur2Id,
-            devineur: utilisateur1Id,
-            points: question.points || 10,
-            reponseSujet: '',
-            reponseDevineur: '',
-            reponduParSujet: false,
-            reponduParDevineur: false,
-            estCorrect: null,
-            corrigePar: null
-          });
-        }
+      questionsSelectionnees.forEach((question) => {
+        // Instance 1 : utilisateur1 sujet, utilisateur2 devineur
+        questionsGenerees.push({
+          questionText: question.questionText,
+          sujet: utilisateur1Id,
+          devineur: utilisateur2Id,
+          points: question.points || 10,
+          reponseSujet: '',
+          reponseDevineur: '',
+          reponduParSujet: false,
+          reponduParDevineur: false,
+          estCorrect: null,
+          corrigePar: null
+        });
+        // Instance 2 : utilisateur2 sujet, utilisateur1 devineur
+        questionsGenerees.push({
+          questionText: question.questionText,
+          sujet: utilisateur2Id,
+          devineur: utilisateur1Id,
+          points: question.points || 10,
+          reponseSujet: '',
+          reponseDevineur: '',
+          reponduParSujet: false,
+          reponduParDevineur: false,
+          estCorrect: null,
+          corrigePar: null
+        });
       });
       
       return questionsGenerees;
