@@ -51,9 +51,11 @@ exports.creerRappel = async (req, res) => {
 
   } catch (error) {
     console.error('Erreur création rappel:', error);
+    console.error('Contenu reçu (req.body):', req.body);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création du rappel'
+      message: 'Erreur lors de la création du rappel',
+      error: error?.message || error
     });
   }
 };
