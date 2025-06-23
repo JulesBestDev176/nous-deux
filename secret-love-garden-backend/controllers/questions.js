@@ -124,21 +124,18 @@ exports.ajouterQuestion = async (req, res) => {
       });
     }
 
-    const question = await Question.create({
+    let question = await Question.create({
       texte,
       categorie: 'utilisateur',
       createur: req.utilisateur.id
     });
 
+    // On peuple le créateur pour renvoyer l'objet complet au frontend
+    question = await question.populate('createur', 'nom');
+
     res.status(201).json({
       success: true,
-      data: {
-        _id: question._id,
-        texte: question.texte,
-        categorie: question.categorie,
-        createur: question.createur,
-        dateCreation: question.dateCreation
-      }
+      data: question
     });
 
   } catch (error) {
@@ -417,6 +414,47 @@ exports.getQuestionsAvecReponsesCouple = async (req, res) => {
       success: false,
       message: 'Erreur lors de la récupération des réponses du couple',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// 🆕 NOUVELLE FONCTION: Supprimer une question
+exports.supprimerQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    console.log(`Tentative de suppression de la question ${questionId} par l'utilisateur ${req.utilisateur.id}`);
+
+    const question = await Question.findOne({
+      _id: questionId,
+      createur: req.utilisateur.id
+    });
+
+    if (!question) {
+      const questionTrouvee = await Question.findById(questionId);
+      console.log(`ÉCHEC: La vérification du créateur a échoué.`);
+      console.log(`   - ID utilisateur demandeur: ${req.utilisateur.id}`);
+      console.log(`   - ID créateur dans la DB:   ${questionTrouvee?.createur}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Question non trouvée ou vous n\'êtes pas autorisé à la supprimer'
+      });
+    }
+
+    // On supprime aussi les réponses associées
+    await Reponse.deleteMany({ question: questionId });
+    await question.deleteOne();
+
+    console.log(`SUCCÈS: Question ${questionId} supprimée.`);
+    res.status(200).json({
+      success: true,
+      message: 'Question et réponses associées supprimées'
+    });
+
+  } catch (error) {
+    console.error('Erreur suppression question:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression de la question'
     });
   }
 };

@@ -142,4 +142,13 @@ router.get('/reponses-partenaire', protegerRoutes, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/questions/:questionId
+// @desc    Supprimer une question personnalisée
+// @access  Privé
+router.delete(
+  '/:questionId',
+  protegerRoutes,
+  questionController.supprimerQuestion
+);
+
 module.exports = router;
