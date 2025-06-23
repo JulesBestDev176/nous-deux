@@ -35,7 +35,13 @@ const questionJeuSchema = new mongoose.Schema({
   points: { type: Number, default: 10 },
   difficulte: { type: String, enum: ['Facile', 'Moyen', 'Difficile', 'Pro'] },
   categorie: { type: String },
-  actif: { type: Boolean, default: true }
+  actif: { type: Boolean, default: true },
+  reponduParSujet: { type: Boolean, default: false },
+  reponduParDevineur: { type: Boolean, default: false },
+  reponseSujet: { type: String, default: '' },
+  reponseDevineur: { type: String, default: '' },
+  estCorrect: { type: Boolean, default: null },
+  corrigePar: { type: String, default: null }
 }, { timestamps: true });
 
 const defiSchema = new mongoose.Schema({
@@ -335,6 +341,16 @@ async function migrer() {
           questionData.optionA = parts[0].replace('Tu préfères... ', '');
           questionData.optionB = parts[1]?.replace(' ?', '') || 'Autre option';
           questionData.questionText = questionData.optionA;
+        }
+
+        // Correction quiz-couple : initialiser tous les champs de réponse
+        if (typeJeu.startsWith('quiz-')) {
+          questionData.reponduParSujet = false;
+          questionData.reponduParDevineur = false;
+          questionData.reponseSujet = '';
+          questionData.reponseDevineur = '';
+          questionData.estCorrect = null;
+          questionData.corrigePar = null;
         }
 
         await QuestionJeu.create(questionData);
