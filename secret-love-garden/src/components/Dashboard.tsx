@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Camera, MessageCircle, Calendar, Settings, LogOut, Menu, Bell, Edit, Target, Mail, BarChart3, MapPin, Users, Gamepad2, Home, X } from "lucide-react";
+import { Heart, Camera, MessageCircle, Calendar, Settings, LogOut, Menu, Bell, Edit, Target, Mail, BarChart3, MapPin, Users, Gamepad2, Home, X, Bot } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 // Import des services
@@ -23,6 +23,7 @@ import StatistiquesSection from "./sections/StatistiquesSection";
 import VoyagesSection from "./sections/VoyagesSection";
 import ProfilsSection from "./sections/ProfilsSection";
 import JeuxSection from "./sections/JeuxSection";
+import ChatbotSection from "./sections/ChatbotSection";
 
 // Import des composants communs
 import Logo from "./Logo";
@@ -71,6 +72,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       items: [
         { id: "gallery", label: "Galerie", icon: Camera },
         { id: "questions", label: "Questions", icon: MessageCircle },
+        { id: "chatbot", label: "Chatbot", icon: Bot },
       ]
     },
     {
@@ -103,6 +105,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const allMenuItems = [
     { id: "gallery", label: "Galerie d'amour", icon: Camera },
     { id: "questions", label: "Questions couple", icon: MessageCircle },
+    { id: "chatbot", label: "Chatbot", icon: Bot },
     { id: "custom-questions", label: "Mes questions", icon: Edit }, 
     { id: "objectifs", label: "Objectifs", icon: Target },
     { id: "reminders", label: "Rappels", icon: Bell },
@@ -143,7 +146,9 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       const customQuestionsNonRepondues = (customQuestionsResponse.data || []).filter(q => {
         const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
         const maReponse = q.reponses?.find(r => r.utilisateur?._id === currentUserId);
-        return !maReponse && q.categorie === 'utilisateur';
+        // On ne compte que les questions dont je ne suis PAS le créateur
+        const isCreator = q.createur?._id === currentUserId;
+        return !maReponse && q.categorie === 'utilisateur' && !isCreator;
       });
 
       setNotifications({
@@ -239,6 +244,15 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
         return <ProfilsSection {...commonProps} />;
       case "jeux":
         return <JeuxSection {...commonProps} />;
+      case "chatbot":
+        return (
+          <ChatbotSection
+            currentUser={currentUserForSections}
+            partenaire={partenaire}
+            isMobile={isMobile}
+            toast={toast}
+          />
+        );
       default:
         return (
           <div className="flex items-center justify-center h-64 bg-white rounded-2xl shadow-sm border border-pink-100">
@@ -257,6 +271,13 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const getCurrentSectionLabel = () => {
     const item = allMenuItems.find(item => item.id === activeSection);
     return item ? item.label : "Nos souvenirs";
+  };
+
+  // Juste avant le return du composant Dashboard, on prépare un currentUserForSections compatible :
+  const currentUserForSections = {
+    _id: currentUser._id || currentUser.id || '',
+    nom: currentUser.nom || currentUser.name || '',
+    email: currentUser.email || '', // Pour VoyagesSection
   };
 
   return (

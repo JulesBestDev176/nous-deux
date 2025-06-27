@@ -103,6 +103,7 @@ app.use('/api/objectif', require('./routes/objectif'));
 app.use('/api/profil', require('./routes/profil'));
 app.use('/api/statistique', require('./routes/statistique'));
 app.use('/api/voyage', require('./routes/voyage'));
+app.use('/api/chatbot', require('./routes/chatbot'));
 
 // Gestion 404
 app.use((req, res, next) => {
