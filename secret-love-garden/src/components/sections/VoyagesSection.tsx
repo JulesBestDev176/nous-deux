@@ -248,9 +248,10 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
       fetchVoyages();
     } catch (error) {
       console.error("Erreur lors de l'ajout du souvenir:", error);
+      const errorMessage = error.message || "Impossible d'ajouter le souvenir.";
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter le souvenir.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

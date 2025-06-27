@@ -40,27 +40,37 @@ exports.creerVoyage = async (req, res) => {
       }));
     }
 
-    // Ajouter chaque image à la galerie
+    // Ajouter chaque image à la galerie (optionnel)
     const imagesGallerie = [];
     if (images.length > 0) {
-      for (const image of images) {
-        // Créer l'entrée dans la galerie
-        const imageGallerie = await Gallerie.create({
-          url: image.url,
-          legende: `${titre} - ${image.legende}`,
-          createur: req.utilisateur.id
-        });
+      try {
+        for (const image of images) {
+          try {
+            // Créer l'entrée dans la galerie
+            const imageGallerie = await Gallerie.create({
+              url: image.url,
+              legende: `${titre} - ${image.legende}`,
+              createur: req.utilisateur.id
+            });
 
-        // Créer l'entrée d'histoire pour chaque image
-        await Histoire.create({
-          type: 'photo',
-          photo: imageGallerie._id,
-          partenaire: partenaire._id,
-          message: `${titre} - ${image.legende}`,
-          createur: req.utilisateur.id
-        });
+            // Créer l'entrée d'histoire pour chaque image
+            await Histoire.create({
+              type: 'photo',
+              photo: imageGallerie._id,
+              partenaire: partenaire._id,
+              message: `${titre} - ${image.legende}`,
+              createur: req.utilisateur.id
+            });
 
-        imagesGallerie.push(imageGallerie);
+            imagesGallerie.push(imageGallerie);
+          } catch (imageError) {
+            console.error('Erreur lors de l\'ajout de l\'image à la galerie:', imageError);
+            // Continuer avec les autres images même si une échoue
+          }
+        }
+      } catch (galleryError) {
+        console.error('Erreur lors de l\'ajout à la galerie:', galleryError);
+        // Continuer même si l'ajout à la galerie échoue
       }
     }
 
@@ -97,7 +107,8 @@ exports.creerVoyage = async (req, res) => {
     console.error('Erreur création voyage:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création du voyage'
+      message: 'Erreur lors de la création du voyage',
+      error: error.message
     });
   }
 };
@@ -167,39 +178,44 @@ exports.ajouterSouvenir = async (req, res) => {
       });
     }
 
-    // Trouver l'autre utilisateur (partenaire)
-    const partenaire = await Utilisateur.findOne({ 
-      _id: { $ne: req.utilisateur.id } 
-    });
-
-    if (!partenaire) {
-      return res.status(404).json({
-        success: false,
-        message: 'Partenaire non trouvé'
-      });
-    }
-
-    // Ajouter chaque image à la galerie
+    // Ajouter chaque image à la galerie (optionnel)
     const imagesGallerie = [];
     if (images.length > 0) {
-      for (const image of images) {
-        // Créer l'entrée dans la galerie
-        const imageGallerie = await Gallerie.create({
-          url: image.url,
-          legende: `${titre} - ${image.legende}`,
-          createur: req.utilisateur.id
+      try {
+        // Trouver l'autre utilisateur (partenaire)
+        const partenaire = await Utilisateur.findOne({ 
+          _id: { $ne: req.utilisateur.id } 
         });
 
-        // Créer l'entrée d'histoire pour chaque image
-        await Histoire.create({
-          type: 'photo',
-          photo: imageGallerie._id,
-          partenaire: partenaire._id,
-          message: `${titre} - ${image.legende}`,
-          createur: req.utilisateur.id
-        });
+        if (partenaire) {
+          for (const image of images) {
+            try {
+              // Créer l'entrée dans la galerie
+              const imageGallerie = await Gallerie.create({
+                url: image.url,
+                legende: `${titre} - ${image.legende}`,
+                createur: req.utilisateur.id
+              });
 
-        imagesGallerie.push(imageGallerie);
+              // Créer l'entrée d'histoire pour chaque image
+              await Histoire.create({
+                type: 'photo',
+                photo: imageGallerie._id,
+                partenaire: partenaire._id,
+                message: `${titre} - ${image.legende}`,
+                createur: req.utilisateur.id
+              });
+
+              imagesGallerie.push(imageGallerie);
+            } catch (imageError) {
+              console.error('Erreur lors de l\'ajout de l\'image à la galerie:', imageError);
+              // Continuer avec les autres images même si une échoue
+            }
+          }
+        }
+      } catch (galleryError) {
+        console.error('Erreur lors de l\'ajout à la galerie:', galleryError);
+        // Continuer même si l'ajout à la galerie échoue
       }
     }
 
@@ -233,7 +249,8 @@ exports.ajouterSouvenir = async (req, res) => {
     console.error('Erreur ajout souvenir:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de l\'ajout du souvenir'
+      message: 'Erreur lors de l\'ajout du souvenir',
+      error: error.message
     });
   }
 };

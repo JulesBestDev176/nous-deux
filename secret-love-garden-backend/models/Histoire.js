@@ -22,14 +22,19 @@ const histoireSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  dateCreation: {
-    type: Date,
-    default: Date.now
+  createur: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Utilisateur',
+    required: true
   },
   partenaire: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Utilisateur',
     required: true
+  },
+  dateCreation: {
+    type: Date,
+    default: Date.now
   }
 });
 
