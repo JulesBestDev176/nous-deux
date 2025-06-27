@@ -50,6 +50,10 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
   };
 
   const isCreator = question.createur?._id === (typeof currentUser === 'object' ? currentUser._id : currentUser);
+  const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
+
+  // Trouver la réponse du partenaire (pas du créateur)
+  const reponsePartenaire = question.reponses?.find(r => r.utilisateur?._id !== currentUserId);
 
   return (
     <div className="bg-white p-3 sm:p-4 rounded-lg border border-pink-200">
@@ -86,20 +90,23 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
         </div>
       </div>
 
-      {reponseExistante ? (
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-          <div className="flex items-center space-x-2 mb-2">
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <span className="font-medium text-green-800 text-sm">Réponse enregistrée</span>
-          </div>
-          <p className="text-green-700 text-sm">{reponseExistante.texte}</p>
-          <p className="text-xs text-green-600 mt-1">
-            Répondu le {new Date(reponseExistante.dateReponse).toLocaleDateString()}
-          </p>
-        </div>
-      ) : (
+      {/* Si je suis le créateur, je ne peux pas répondre mais je peux voir la réponse du partenaire */}
+      {isCreator ? (
         <div className="space-y-3">
-          {isCreator ? (
+          {reponsePartenaire ? (
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <MessageCircle className="w-4 h-4 text-purple-600" />
+                <span className="font-medium text-purple-800 text-sm">
+                  Réponse de votre partenaire
+                </span>
+              </div>
+              <p className="text-purple-700 text-sm">{reponsePartenaire.texte}</p>
+              <p className="text-xs text-purple-600 mt-1">
+                Répondu le {new Date(reponsePartenaire.dateReponse).toLocaleDateString()}
+              </p>
+            </div>
+          ) : (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <div className="flex items-center space-x-2">
                 <MessageCircle className="w-4 h-4 text-blue-600" />
@@ -107,6 +114,22 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
                   En attente de la réponse de votre partenaire
                 </span>
               </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Si je ne suis pas le créateur, je peux répondre */
+        <div className="space-y-3">
+          {reponseExistante ? (
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="font-medium text-green-800 text-sm">Votre réponse</span>
+              </div>
+              <p className="text-green-700 text-sm">{reponseExistante.texte}</p>
+              <p className="text-xs text-green-600 mt-1">
+                Répondu le {new Date(reponseExistante.dateReponse).toLocaleDateString()}
+              </p>
             </div>
           ) : (
             <>
@@ -157,32 +180,6 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
               )}
             </>
           )}
-        </div>
-      )}
-
-      {/* Afficher la réponse du partenaire si elle existe et est différente de la mienne */}
-      {question.reponses && question.reponses.length > 0 && reponseExistante && (
-        <div className="mt-4 space-y-2">
-          {question.reponses
-            .filter(r => {
-              const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
-              return r.utilisateur?._id !== currentUserId;
-            })
-            .filter(r => !(reponseExistante && r.texte === reponseExistante.texte && r.dateReponse === reponseExistante.dateReponse))
-            .map((reponsePartenaire, index) => (
-              <div key={index} className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                <div className="flex items-center space-x-2 mb-2">
-                  <MessageCircle className="w-4 h-4 text-purple-600" />
-                  <span className="font-medium text-purple-800 text-sm">
-                    Réponse de votre partenaire
-                  </span>
-                </div>
-                <p className="text-purple-700 text-sm">{reponsePartenaire.texte}</p>
-                <p className="text-xs text-purple-600 mt-1">
-                  Répondu le {new Date(reponsePartenaire.dateReponse).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
         </div>
       )}
     </div>
