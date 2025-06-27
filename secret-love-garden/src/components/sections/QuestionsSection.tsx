@@ -55,6 +55,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
   const [reponseExistante, setReponseExistante] = useState<string>("");
   const [activeTab, setActiveTab] = useState<'question' | 'historique'>('question');
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  
+  // Nouveaux états pour la réponse aux questions historiques
+  const [repondreQuestionId, setRepondreQuestionId] = useState<string | null>(null);
+  const [reponseHistorique, setReponseHistorique] = useState<string>("");
+  const [submittingHistorique, setSubmittingHistorique] = useState(false);
 
   useEffect(() => {
     // Récupérer l'ID de l'utilisateur actuel
@@ -119,7 +124,15 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       console.log('👤 DEBUG - user localStorage:', user, '| currentUser prop:', currentUser, '| monId:', monId);
 
       // Organiser les données par question avec les réponses de chaque partenaire
-      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: any, idx: number) => {
+      const questionsOrganisees: QuestionAvecReponses[] = response.data.map((item: {
+        _id: string;
+        texte: string;
+        categorie: string;
+        createur?: { _id: string; nom: string };
+        dateProgrammation?: string;
+        dateCreation: string;
+        reponses?: Reponse[];
+      }, idx: number) => {
         // item = { _id, texte, categorie, createur, dateProgrammation, dateCreation, reponses: [...] }
         let reponsesValides = [];
         if (item.reponses && item.reponses.length > 0) {
@@ -162,7 +175,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
         };
       });
       
-      console.log(`✅ ${questionsOrganisees.length} questions organisées pour affichage`);
+      // Trier les questions du plus récent au plus ancien
+      questionsOrganisees.sort((a, b) => {
+        const dateA = new Date(a.question.dateCreation);
+        const dateB = new Date(b.question.dateCreation);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      console.log(`✅ ${questionsOrganisees.length} questions organisées pour affichage (triées par date)`);
       setQuestionsAvecReponses(questionsOrganisees);
       
     } catch (error: unknown) {
@@ -180,6 +200,12 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             maReponse: reponse,
             reponsePartenaire: undefined
           }));
+          // Trier aussi les questions du fallback
+          questionsSimples.sort((a, b) => {
+            const dateA = new Date(a.question.dateCreation);
+            const dateB = new Date(b.question.dateCreation);
+            return dateB.getTime() - dateA.getTime();
+          });
           setQuestionsAvecReponses(questionsSimples);
           console.log(`📋 Fallback réussi: ${questionsSimples.length} questions avec mes réponses`);
         }
@@ -235,6 +261,57 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Nouvelle fonction pour répondre aux questions historiques
+  const handleSubmitReponseHistorique = async (questionId: string) => {
+    if (!reponseHistorique.trim()) {
+      toast({
+        title: "Réponse manquante",
+        description: "Veuillez écrire une réponse",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmittingHistorique(true);
+      
+      await questionService.soumettreReponse({
+        questionId: questionId,
+        texte: reponseHistorique.trim()
+      });
+
+      toast({
+        title: "Réponse envoyée !",
+        description: "Votre réponse a été enregistrée 💕",
+      });
+
+      // Réinitialiser l'état
+      setRepondreQuestionId(null);
+      setReponseHistorique("");
+      
+      // Recharger l'historique après un court délai
+      setTimeout(() => {
+        loadQuestionsAvecReponses();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la réponse historique:', error);
+      toast({
+        title: "Erreur d'envoi",
+        description: "Impossible d'envoyer la réponse",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingHistorique(false);
+    }
+  };
+
+  // Fonction pour annuler la réponse à une question historique
+  const handleCancelReponseHistorique = () => {
+    setRepondreQuestionId(null);
+    setReponseHistorique("");
   };
 
   const formatDate = (dateString: string) => {
@@ -504,6 +581,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                 {filteredQuestionsAvecReponses.map((questionAvecReponses) => {
                   const { question, maReponse, reponsePartenaire } = questionAvecReponses;
                   const statut = getStatutQuestion(questionAvecReponses);
+                  const isRepondreMode = repondreQuestionId === question._id;
                   console.log('🟦 RENDU HISTORIQUE - Question:', question._id, '| Texte:', question.texte, '\n  maReponse:', maReponse, '\n  reponsePartenaire:', reponsePartenaire);
                   
                   return (
@@ -570,6 +648,55 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                                 </div>
                               )}
                             </div>
+
+                            {/* Zone de réponse pour les questions non répondues */}
+                            {!maReponse && (
+                              <div className="space-y-3">
+                                {isRepondreMode ? (
+                                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                      Votre réponse
+                                    </Label>
+                                    <Textarea
+                                      placeholder="Partagez vos pensées sur cette question..."
+                                      value={reponseHistorique}
+                                      onChange={(e) => setReponseHistorique(e.target.value)}
+                                      className="min-h-[100px] resize-none text-sm mb-3"
+                                      rows={4}
+                                    />
+                                    <div className="flex space-x-2">
+                                      <Button
+                                        onClick={() => handleSubmitReponseHistorique(question._id)}
+                                        disabled={!reponseHistorique.trim() || submittingHistorique}
+                                        className="flex-1 bg-pink-500 hover:bg-pink-600 text-white text-sm"
+                                      >
+                                        {submittingHistorique ? (
+                                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        ) : (
+                                          <Send className="w-4 h-4 mr-2" />
+                                        )}
+                                        {submittingHistorique ? "Envoi..." : "Envoyer"}
+                                      </Button>
+                                      <Button
+                                        onClick={handleCancelReponseHistorique}
+                                        variant="outline"
+                                        className="text-sm"
+                                      >
+                                        Annuler
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    onClick={() => setRepondreQuestionId(question._id)}
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-2"
+                                  >
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Répondre à cette question
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         

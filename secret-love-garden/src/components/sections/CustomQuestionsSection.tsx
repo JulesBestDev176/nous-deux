@@ -69,15 +69,15 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
             Créée le {new Date(question.dateCreation).toLocaleDateString()}
           </span>
           {question.createur?.nom && (
-            <span className={`px-2 py-1 rounded-full text-xs ${
-              isCreator ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-            }`}>
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            isCreator ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+          }`}>
               {isCreator
                 ? 'Votre question'
                 : question.createur.nom !== currentUser
                   ? 'Question de votre partenaire'
                   : ''}
-            </span>
+          </span>
           )}
         </div>
       </div>
