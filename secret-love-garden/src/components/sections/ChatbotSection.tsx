@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-// Exemple d'API (à adapter selon l'emplacement réel)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Correction de l'URL de base pour inclure /api
+const API_BASE_URL = 'https://nous-deux-7px7.onrender.com/api';
 
 const chatbotAPI = {
   async sendMessage(message: string) {

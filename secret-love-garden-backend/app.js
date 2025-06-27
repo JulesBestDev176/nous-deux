@@ -26,9 +26,8 @@ const io = new Server(httpServer, {
 // Middlewares globaux
 app.use(cors({
   origin: [
-    'http://localhost:8081',
-    'http://localhost:3000',
-    'https://nous-deux-frontend.onrender.com',
+    'https://nous-deux-7px7.onrender.com',
+    'http://localhost:8081', // pour le dev local si besoin
   ],
   credentials: true
 }));
