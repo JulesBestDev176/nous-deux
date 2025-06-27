@@ -231,7 +231,7 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
 
   const handleAddSouvenir = async (voyageId: string) => {
     try {
-      await voyageService.addSouvenir(voyageId, nouveauSouvenir);
+      await voyageService.ajouterSouvenir(voyageId, nouveauSouvenir);
       toast({
         title: "Souvenir ajouté !",
         description: "Votre souvenir a été ajouté avec succès.",
