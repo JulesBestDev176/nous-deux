@@ -15,22 +15,21 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
+// Autorise toutes les origines et tous les ports (DANGEREUX en prod, à restreindre ensuite)
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
 // Configuration Socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:8081', 'http://localhost:3000'],
+    origin: true,
     methods: ['GET', 'POST']
   }
 });
 
 // Middlewares globaux
-app.use(cors({
-  origin: [
-    'https://nous-deux-7px7.onrender.com',
-    'http://localhost:8081', // pour le dev local si besoin
-  ],
-  credentials: true
-}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
