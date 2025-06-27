@@ -18,13 +18,25 @@ class ChatbotService {
 
   async getUserContext(userId) {
     try {
-      const user = await Utilisateur.findById(userId).populate('partenaire');
+      // Récupérer l'utilisateur
+      const user = await Utilisateur.findById(userId);
       if (!user) throw new Error('Utilisateur non trouvé');
       
+      // Récupérer le partenaire via codePartenaire
+      let partner = null;
+      if (user.codePartenaire) {
+        partner = await Utilisateur.findOne({ code: user.codePartenaire });
+      }
+      
+      // Récupérer le profil du couple
       const coupleProfile = await ProfilCouple.findOne({ 
-        $or: [ { utilisateur1: userId }, { utilisateur2: userId } ] 
+        $or: [ 
+          { utilisateur1: userId }, 
+          { utilisateur2: userId } 
+        ] 
       }).populate(['utilisateur1', 'utilisateur2']);
       
+      // Dernières 30 jours de stats
       const dateLimit = new Date();
       dateLimit.setDate(dateLimit.getDate() - 30);
       
@@ -33,24 +45,37 @@ class ChatbotService {
         date: { $gte: dateLimit } 
       }).sort({ date: -1 });
       
+      // Dernières réponses
       const recentResponses = await Reponse.find({ 
         utilisateur: userId 
       }).sort({ dateReponse: -1 }).limit(10);
       
+      // Objectifs en cours
       const objectives = await Objectif.find({ 
         $or: [ { createur: userId }, { partenaire: userId } ], 
         statut: { $in: ['en_attente', 'en_cours'] } 
       });
       
+      // Événements récents
       const events = await Evenement.find({ 
         $or: [ { createur: userId }, { partenaire: userId } ] 
       }).sort({ dateCreation: -1 }).limit(5);
       
+      // Jeux récents
       const recentGames = await Jeu.find({ 
         createur: userId 
       }).sort({ dateCreation: -1 }).limit(3);
       
-      return { user, coupleProfile, stats, recentResponses, objectives, events, recentGames };
+      return { 
+        user, 
+        partner, 
+        coupleProfile, 
+        stats, 
+        recentResponses, 
+        objectives, 
+        events, 
+        recentGames 
+      };
     } catch (error) {
       console.error('Erreur getUserContext:', error);
       throw error;
@@ -69,7 +94,7 @@ class ChatbotService {
     
     const { recentResponses, stats, objectives, events, recentGames } = context;
     
-    // Score de communication
+    // Score de communication basé sur les réponses
     if (recentResponses.length > 5) {
       analysis.communicationScore = Math.min(10, recentResponses.length);
       analysis.strengths.push("Communication active");
@@ -80,16 +105,18 @@ class ChatbotService {
       }
     }
     
-    // Score d'activité
+    // Score d'activité basé sur le temps ensemble
     if (stats.length > 0) {
       const avgTimeTogether = stats.reduce((sum, s) => sum + (s.tempsEnsemble || 0), 0) / stats.length;
-      analysis.activityScore = Math.min(10, avgTimeTogether / 60);
-      if (avgTimeTogether < 120) {
+      analysis.activityScore = Math.min(10, avgTimeTogether / 60); // convertir en heures
+      if (avgTimeTogether < 120) { // moins de 2h par jour en moyenne
         analysis.issues.push("Temps passé ensemble insuffisant");
+      } else {
+        analysis.strengths.push("Bon temps de qualité ensemble");
       }
     }
     
-    // Score d'engagement
+    // Score d'engagement basé sur objectifs, événements, jeux
     const engagementIndicators = objectives.length + events.length + recentGames.length;
     analysis.engagementScore = Math.min(10, engagementIndicators);
     
@@ -102,42 +129,58 @@ class ChatbotService {
     return analysis;
   }
 
-  buildFlexiblePrompt(context) {
-    const { user, coupleProfile } = context;
+  buildContextualPrompt(context) {
+    const { user, partner, coupleProfile } = context;
     const coupleAnalysis = this.analyzeCoupleHealth(context);
     
-    return `Tu es l'assistant personnel de l'application "Nous Deux" qui aide les couples.
+    // Calculer la durée de la relation si possible
+    let relationDuration = 'Non définie';
+    if (coupleProfile?.dateDebutRelation) {
+      const start = new Date(coupleProfile.dateDebutRelation);
+      const now = new Date();
+      const months = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 30));
+      relationDuration = `${months} mois`;
+    }
+    
+    return `Tu es l'assistant IA de l'application "Nous Deux" qui aide les couples. Tu connais bien cet utilisateur et son couple.
 
-INFORMATIONS SUR L'UTILISATEUR:
-- Prénom: ${user.prenom}
-- Partenaire: ${user.partenaire?.prenom || 'Non défini'}
+PROFIL UTILISATEUR:
+- Prénom: ${user.nom || user.prenom || 'Non défini'}
+- Code utilisateur: ${user.code}
+- Code partenaire recherché: ${user.codePartenaire || 'Non défini'}
+- Partenaire identifié: ${partner ? partner.nom || partner.prenom : 'Aucun partenaire trouvé'}
+- Date création compte: ${user.dateCreation ? new Date(user.dateCreation).toLocaleDateString() : 'Non définie'}
+
+DONNÉES DU COUPLE:
 - Statut relation: ${coupleProfile?.statusRelation || 'Non défini'}
-- Ensemble depuis: ${coupleProfile?.dateDebutRelation || 'Date non définie'}
-- Points forts du couple: ${coupleProfile?.pointsForts?.join(', ') || 'Non définis'}
-- Points à améliorer: ${coupleProfile?.pointsAmeliorer?.join(', ') || 'Non définis'}
+- Ensemble depuis: ${relationDuration}
+- Date rencontre: ${coupleProfile?.dateRencontre ? new Date(coupleProfile.dateRencontre).toLocaleDateString() : 'Non définie'}
+- Points forts identifiés: ${coupleProfile?.pointsForts?.join(', ') || 'Aucun encore'}
+- Points à améliorer: ${coupleProfile?.pointsAmeliorer?.join(', ') || 'Aucun identifié'}
+- Objectifs communs: ${coupleProfile?.objectifsCommuns?.join(', ') || 'Aucun défini'}
 
-ÉTAT ACTUEL DU COUPLE:
+ANALYSE COMPORTEMENTALE RÉCENTE:
 - Score communication: ${coupleAnalysis.communicationScore}/10
 - Score activités: ${coupleAnalysis.activityScore}/10  
 - Score engagement: ${coupleAnalysis.engagementScore}/10
-- Problèmes récents: ${coupleAnalysis.issues.join(', ') || 'Aucun'}
+- Problèmes détectés: ${coupleAnalysis.issues.join(', ') || 'Aucun'}
 - Forces actuelles: ${coupleAnalysis.strengths.join(', ') || 'Aucune'}
 
-INSTRUCTIONS:
-- Réponds naturellement comme un ami bienveillant et expert en relations
-- Adapte automatiquement le type de réponse selon la question :
-  * Questions simples/salutations → réponse courte et amicale
-  * Demandes d'info → réponse factuelle avec les données disponibles  
-  * Problèmes relationnels → conseils personnalisés et empathiques
-  * Conversation générale → discussion naturelle et engageante
-- Utilise les informations du couple pour personnaliser tes réponses quand c'est pertinent
-- Sois chaleureux et authentique, pas robotique
-- Propose des activités de l'app seulement si ça fait sens dans le contexte
-- Varie tes réponses, ne sois jamais prévisible ou répétitif`;
+INSTRUCTIONS COMPORTEMENTALES:
+- Réponds de façon naturelle comme un assistant qui CONNAÎT déjà cet utilisateur
+- Adapte ton style selon le type de question :
+  * Salutation simple → "Salut [prénom] ! Ça va ?"
+  * Question factuelle → Réponse directe avec les données que tu as
+  * Demande conseil → Conseil personnalisé basé sur leur situation
+  * Question sur partenaire → Utilise les données réelles du partenaire
+- Utilise les vraies données de leur relation, pas des généralités
+- Sois concis pour les questions simples, détaillé pour les conseils
+- Ne répète pas systématiquement tous les scores dans chaque réponse
+- Montre que tu connais leur historique et situation`;
   }
 
   async generateResponse(userMessage, context) {
-    const systemPrompt = this.buildFlexiblePrompt(context);
+    const systemPrompt = this.buildContextualPrompt(context);
     
     try {
       const messages = [
@@ -149,7 +192,7 @@ INSTRUCTIONS:
       return response.content;
     } catch (error) {
       console.error('Erreur generateResponse:', error);
-      return "Désolé, j'ai un petit souci technique. Tu peux réessayer ?";
+      return "Désolé, j'ai un petit problème technique. Tu peux réessayer ?";
     }
   }
 
@@ -157,33 +200,33 @@ INSTRUCTIONS:
     const suggestions = [];
     const { coupleProfile } = context;
     const analysis = this.analyzeCoupleHealth(context);
-    const preferences = coupleProfile?.preferences;
     
-    // Suggestions basées sur les préférences
-    if (preferences?.activitesFavorites?.length > 0) {
-      suggestions.push(`Planifiez une session de ${preferences.activitesFavorites[0]} ensemble`);
+    // Suggestions basées sur les préférences existantes
+    if (coupleProfile?.preferences?.activitesFavorites?.length > 0) {
+      suggestions.push(`Refaire du ${coupleProfile.preferences.activitesFavorites[0]} ensemble`);
     }
     
-    // Suggestions basées sur l'analyse
+    // Suggestions basées sur l'analyse comportementale
     if (analysis.issues.includes("Communication insuffisante")) {
       suggestions.push(
-        "Répondez ensemble aux questions du jour",
-        "Créez un nouveau défi de communication"
+        "Répondez aux questions du jour ensemble",
+        "Créez un moment d'échange quotidien"
       );
     }
     
     if (analysis.issues.includes("Temps passé ensemble insuffisant")) {
       suggestions.push(
-        "Organisez une soirée spéciale",
-        "Planifiez un moment rien qu'à vous deux"
+        "Planifiez une soirée spéciale",
+        "Organisez un week-end rien qu'à vous"
       );
     }
     
-    // Suggestions générales si pas de problèmes spécifiques
+    // Suggestions générales si tout va bien
     if (analysis.issues.length === 0) {
       suggestions.push(
-        "Découvrez les nouveaux jeux du couple",
-        "Créez un souvenir ensemble"
+        "Explorez les nouveaux jeux de couple",
+        "Créez un nouveau souvenir ensemble",
+        "Planifiez votre prochaine aventure"
       );
     }
     
@@ -194,7 +237,11 @@ INSTRUCTIONS:
     try {
       const context = await this.getUserContext(userId);
       
-      // Mistral gère tout, mais avec un prompt intelligent
+      // Debug log pour vérifier les données
+      console.log('Context user:', context.user?.nom, context.user?.code);
+      console.log('Context partner:', context.partner?.nom);
+      console.log('Couple profile:', context.coupleProfile?.statusRelation);
+      
       const response = await this.generateResponse(message, context);
       const suggestions = this.suggestActivities(context);
       const analysis = this.analyzeCoupleHealth(context);
@@ -206,10 +253,10 @@ INSTRUCTIONS:
         analysis
       };
     } catch (error) {
-      console.error('Erreur chat:', error);
+      console.error('Erreur chat complète:', error);
       return { 
         success: false, 
-        response: "Je ne peux pas accéder à vos informations pour le moment. Réessayons dans un instant ?", 
+        response: "Je ne peux pas accéder à vos informations pour le moment. Vérifions votre connexion.", 
         error: error.message 
       };
     }
