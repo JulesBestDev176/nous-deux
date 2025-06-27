@@ -10,7 +10,7 @@ const Jeu = require('../models/Jeu');
 class ChatbotService {
   constructor() {
     this.llm = new ChatMistralAI({
-      model: process.env.CHATBOT_MODEL || 'mistral-tiny',
+      model: process.env.CHATBOT_MODEL || 'mistral-large-latest',
       temperature: parseFloat(process.env.CHATBOT_TEMPERATURE) || 0.7,
       apiKey: process.env.MISTRAL_API_KEY
     });

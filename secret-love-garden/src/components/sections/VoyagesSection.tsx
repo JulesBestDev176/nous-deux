@@ -336,34 +336,34 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
     return (
       <div className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-1">{voyage.titre}</h3>
             <div className="flex items-center text-gray-600 mb-1">
               <MapPin className="w-4 h-4 mr-2" />
               <span className="text-sm">{voyage.destination}</span>
-            </div>
+              </div>
             {voyage.adresse && (
               <div className="flex items-center text-gray-500 text-sm">
                 <Navigation className="w-3 h-3 mr-2" />
                 <span>{voyage.adresse}</span>
               </div>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${statutInfo.bgClass} ${statutInfo.textClass} border ${statutInfo.borderClass}`}>
               {statutInfo.icon} {statutInfo.label}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteVoyage(voyage._id)}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDeleteVoyage(voyage._id)}
               className="text-gray-400 hover:text-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
 
         {/* Description */}
         {voyage.description && (
@@ -372,19 +372,19 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
 
         {/* Dates */}
         <div className="flex flex-wrap gap-3 mb-4">
-          {voyage.dateDebut && (
+            {voyage.dateDebut && (
             <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-200">
               <Calendar className="w-3 h-3 mr-2" />
               <span className="text-xs font-medium">Début: {new Date(voyage.dateDebut).toLocaleDateString('fr-FR')}</span>
             </div>
-          )}
-          {voyage.dateFin && (
+            )}
+            {voyage.dateFin && (
             <div className="flex items-center bg-purple-50 text-purple-700 px-3 py-1 rounded-lg border border-purple-200">
               <Clock className="w-3 h-3 mr-2" />
               <span className="text-xs font-medium">Fin: {new Date(voyage.dateFin).toLocaleDateString('fr-FR')}</span>
             </div>
           )}
-        </div>
+          </div>
 
         {/* Boutons de statut rapides */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -472,16 +472,16 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 rounded-md flex items-center justify-center">
                               <ExternalLink className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                            </div>
+                </div>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                  )}
-                  
+            </div>
+          </div>
+        )}
+
                   {/* Description et date */}
                   <div className="text-pink-700 text-sm mb-2">{souvenir.description}</div>
-                  {souvenir.date && (
+                    {souvenir.date && (
                     <div className="flex items-center text-pink-600 text-xs">
                       <Calendar className="w-3 h-3 mr-1" />
                       {new Date(souvenir.date).toLocaleDateString('fr-FR')}
@@ -511,7 +511,7 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
 
   // Si un lieu est sélectionné, afficher sa page de présentation
   if (lieuSelectionne) {
-    return (
+  return (
       <LieuPresentationPage
         lieu={lieuSelectionne}
         ville={lieuSelectionne.ville || "Dakar"}
@@ -540,13 +540,13 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
           <div className={`flex space-x-3 ${isMobile ? 'w-full flex-col space-x-0 space-y-3' : ''}`}>
             {activeTab === 'voyages' ? (
               <>
-                <Button
-                  onClick={() => setShowCreateForm(true)}
+            <Button
+              onClick={() => setShowCreateForm(true)}
                   className={`bg-pink-500 hover:bg-pink-600 text-white ${isMobile ? 'w-full' : ''}`}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouveau voyage
-                </Button>
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau voyage
+            </Button>
                 <Button
                   onClick={() => setActiveTab('propositions')}
                   variant="outline"
@@ -554,15 +554,15 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                 >
                   <Heart className="w-4 h-4 mr-2" />
                   Inspirations
-                </Button>
-                <Button
-                  onClick={() => setActiveTab('carte')}
-                  variant="outline"
+            </Button>
+            <Button
+              onClick={() => setActiveTab('carte')}
+              variant="outline"
                   className={`border-gray-300 text-gray-700 hover:bg-gray-50 ${isMobile ? 'w-full' : ''}`}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
+            >
+              <Globe className="w-4 h-4 mr-2" />
                   Carte
-                </Button>
+            </Button>
               </>
             ) : activeTab === 'propositions' ? (
               <>
@@ -823,54 +823,54 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
           </div>
         ) : activeTab === 'voyages' ? (
           <div className="space-y-6">
-            {/* Statistiques */}
+        {/* Statistiques */}
             <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-blue-600">{voyages.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{voyages.length}</div>
                     <div className="text-blue-600 text-sm">Voyages</div>
-                  </div>
+          </div>
                   <MapPin className="w-6 h-6 text-blue-400" />
                 </div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {voyages.filter(v => v.statut === 'termine').length}
-                    </div>
+            <div className="text-2xl font-bold text-green-600">
+              {voyages.filter(v => v.statut === 'termine').length}
+            </div>
                     <div className="text-green-600 text-sm">Terminés</div>
-                  </div>
+          </div>
                   <Star className="w-6 h-6 text-green-400" />
                 </div>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {voyages.filter(v => v.statut === 'planifie').length}
-                    </div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {voyages.filter(v => v.statut === 'planifie').length}
+            </div>
                     <div className="text-yellow-600 text-sm">À venir</div>
-                  </div>
+          </div>
                   <Calendar className="w-6 h-6 text-yellow-400" />
                 </div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-purple-600">
-                      {voyages.reduce((acc, voyage) => acc + (voyage.souvenirs?.length || 0), 0)}
-                    </div>
+            <div className="text-2xl font-bold text-purple-600">
+              {voyages.reduce((acc, voyage) => acc + (voyage.souvenirs?.length || 0), 0)}
+            </div>
                     <div className="text-purple-600 text-sm">Souvenirs</div>
                   </div>
                   <Heart className="w-6 h-6 text-purple-400" />
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
-            {/* Formulaire nouveau voyage */}
-            {showCreateForm && (
+        {/* Formulaire nouveau voyage */}
+        {showCreateForm && (
               <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
                 <div className="flex items-center mb-4">
                   <div className="bg-blue-500 p-2 rounded-lg mr-3">
@@ -879,31 +879,31 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                   <h3 className="text-lg font-semibold text-blue-800">Planifier un nouveau voyage</h3>
                 </div>
                 <div className="space-y-4">
-                  <Input
-                    value={nouveauVoyage.titre}
-                    onChange={(e) => setNouveauVoyage(prev => ({ ...prev, titre: e.target.value }))}
+              <Input
+                value={nouveauVoyage.titre}
+                onChange={(e) => setNouveauVoyage(prev => ({ ...prev, titre: e.target.value }))}
                     placeholder="Titre du voyage"
-                    className="border-blue-200 focus:border-blue-500"
-                  />
-                  <Input
-                    value={nouveauVoyage.destination}
-                    onChange={(e) => setNouveauVoyage(prev => ({ ...prev, destination: e.target.value }))}
-                    placeholder="Destination"
-                    className="border-blue-200 focus:border-blue-500"
-                    list="destinations-populaires"
-                  />
-                  <datalist id="destinations-populaires">
+                className="border-blue-200 focus:border-blue-500"
+              />
+              <Input
+                value={nouveauVoyage.destination}
+                onChange={(e) => setNouveauVoyage(prev => ({ ...prev, destination: e.target.value }))}
+                placeholder="Destination"
+                className="border-blue-200 focus:border-blue-500"
+                list="destinations-populaires"
+              />
+              <datalist id="destinations-populaires">
                     {lieuxGuide.map((dest: LieuData, index: number) => (
                       <option key={index} value={dest.nom} />
-                    ))}
-                  </datalist>
-                  <Textarea
-                    value={nouveauVoyage.description}
-                    onChange={(e) => setNouveauVoyage(prev => ({ ...prev, description: e.target.value }))}
+                ))}
+              </datalist>
+              <Textarea
+                value={nouveauVoyage.description}
+                onChange={(e) => setNouveauVoyage(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Description du voyage..."
                     rows={3}
-                    className="border-blue-200 focus:border-blue-500"
-                  />
+                className="border-blue-200 focus:border-blue-500"
+              />
                   <Input
                     value={nouveauVoyage.adresse}
                     onChange={(e) => setNouveauVoyage(prev => ({ ...prev, adresse: e.target.value }))}
@@ -913,71 +913,71 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                   <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
                     <div>
                       <label className="text-sm font-medium text-blue-700 block mb-1">Date de début</label>
-                      <Input
-                        type="date"
-                        value={nouveauVoyage.dateDebut}
-                        onChange={(e) => setNouveauVoyage(prev => ({ ...prev, dateDebut: e.target.value }))}
-                        className="border-blue-200 focus:border-blue-500"
-                      />
+                <Input
+                  type="date"
+                  value={nouveauVoyage.dateDebut}
+                  onChange={(e) => setNouveauVoyage(prev => ({ ...prev, dateDebut: e.target.value }))}
+                  className="border-blue-200 focus:border-blue-500"
+                />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-blue-700 block mb-1">Date de fin</label>
-                      <Input
-                        type="date"
-                        value={nouveauVoyage.dateFin}
-                        onChange={(e) => setNouveauVoyage(prev => ({ ...prev, dateFin: e.target.value }))}
-                        className="border-blue-200 focus:border-blue-500"
-                      />
+                <Input
+                  type="date"
+                  value={nouveauVoyage.dateFin}
+                  onChange={(e) => setNouveauVoyage(prev => ({ ...prev, dateFin: e.target.value }))}
+                  className="border-blue-200 focus:border-blue-500"
+                />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-blue-700 block mb-1">Statut</label>
-                      <select
-                        value={nouveauVoyage.statut}
-                        onChange={(e) => setNouveauVoyage(prev => ({ ...prev, statut: e.target.value }))}
+                <select
+                  value={nouveauVoyage.statut}
+                  onChange={(e) => setNouveauVoyage(prev => ({ ...prev, statut: e.target.value }))}
                         className="w-full px-3 py-2 border border-blue-200 rounded-md focus:border-blue-500"
-                      >
-                        {statutsVoyage.map(statut => (
-                          <option key={statut.value} value={statut.value}>
-                            {statut.icon} {statut.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                >
+                  {statutsVoyage.map(statut => (
+                    <option key={statut.value} value={statut.value}>
+                      {statut.icon} {statut.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
                   </div>
                   <div className={`flex space-x-3 ${isMobile ? 'flex-col space-x-0 space-y-2' : ''}`}>
-                    <Button
-                      onClick={handleCreateVoyage}
+                <Button
+                  onClick={handleCreateVoyage}
                       className={`bg-blue-500 hover:bg-blue-600 text-white ${isMobile ? 'w-full' : 'flex-1'}`}
-                    >
-                      <Plane className="w-4 h-4 mr-2" />
-                      Créer le voyage
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowCreateForm(false);
-                        setNouveauVoyage({
-                          titre: '',
-                          destination: '',
-                          description: '',
+                >
+                  <Plane className="w-4 h-4 mr-2" />
+                  Créer le voyage
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setNouveauVoyage({
+                      titre: '',
+                      destination: '',
+                      description: '',
                           adresse: '',
-                          dateDebut: '',
-                          dateFin: '',
-                          statut: 'planifie',
-                          images: []
-                        });
-                      }}
+                      dateDebut: '',
+                      dateFin: '',
+                      statut: 'planifie',
+                      images: []
+                    });
+                  }}
                       className={`border-blue-300 hover:bg-blue-50 ${isMobile ? 'w-full' : ''}`}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
+                >
+                  Annuler
+                </Button>
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
-            {/* Formulaire nouveau souvenir */}
-            {showSouvenirForm && (
+        {/* Formulaire nouveau souvenir */}
+        {showSouvenirForm && (
               <div className="bg-pink-50 rounded-lg border border-pink-200 p-4">
                 <div className="flex items-center mb-4">
                   <div className="bg-pink-500 p-2 rounded-lg mr-3">
@@ -985,41 +985,41 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                   </div>
                   <h3 className="text-lg font-semibold text-pink-800">
                     Ajouter un souvenir
-                  </h3>
+            </h3>
                 </div>
                 <div className="space-y-4">
-                  <Input
-                    value={nouveauSouvenir.titre}
-                    onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, titre: e.target.value }))}
-                    placeholder="Titre du souvenir"
-                    className="border-pink-200 focus:border-pink-500"
-                  />
-                  <Textarea
-                    value={nouveauSouvenir.description}
-                    onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, description: e.target.value }))}
+              <Input
+                value={nouveauSouvenir.titre}
+                onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, titre: e.target.value }))}
+                placeholder="Titre du souvenir"
+                className="border-pink-200 focus:border-pink-500"
+              />
+              <Textarea
+                value={nouveauSouvenir.description}
+                onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Description du moment..."
                     rows={3}
-                    className="border-pink-200 focus:border-pink-500"
-                  />
+                className="border-pink-200 focus:border-pink-500"
+              />
                   <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     <div>
                       <label className="text-sm font-medium text-pink-700 block mb-1">Date</label>
-                      <Input
-                        type="date"
-                        value={nouveauSouvenir.date}
-                        onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, date: e.target.value }))}
-                        className="border-pink-200 focus:border-pink-500"
-                      />
+                <Input
+                  type="date"
+                  value={nouveauSouvenir.date}
+                  onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, date: e.target.value }))}
+                  className="border-pink-200 focus:border-pink-500"
+                />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-pink-700 block mb-1">Lieu</label>
-                      <Input
-                        value={nouveauSouvenir.lieu}
-                        onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, lieu: e.target.value }))}
+                <Input
+                  value={nouveauSouvenir.lieu}
+                  onChange={(e) => setNouveauSouvenir(prev => ({ ...prev, lieu: e.target.value }))}
                         placeholder="Lieu"
-                        className="border-pink-200 focus:border-pink-500"
-                      />
-                    </div>
+                  className="border-pink-200 focus:border-pink-500"
+                />
+              </div>
                   </div>
                   <Input
                     value={nouveauSouvenir.adresse}
@@ -1073,43 +1073,43 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                   )}
 
                   <div className={`flex space-x-3 ${isMobile ? 'flex-col space-x-0 space-y-2' : ''}`}>
-                    <Button
-                      onClick={() => handleAddSouvenir(showSouvenirForm)}
+                <Button
+                  onClick={() => handleAddSouvenir(showSouvenirForm)}
                       className={`bg-pink-500 hover:bg-pink-600 text-white ${isMobile ? 'w-full' : 'flex-1'}`}
-                    >
-                      <Heart className="w-4 h-4 mr-2" />
+                >
+                  <Heart className="w-4 h-4 mr-2" />
                       Sauvegarder
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowSouvenirForm(null);
-                        setNouveauSouvenir({
-                          titre: '',
-                          description: '',
-                          date: '',
-                          lieu: '',
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowSouvenirForm(null);
+                    setNouveauSouvenir({
+                      titre: '',
+                      description: '',
+                      date: '',
+                      lieu: '',
                           adresse: '',
-                          images: []
-                        });
-                      }}
+                      images: []
+                    });
+                  }}
                       className={`border-pink-300 hover:bg-pink-50 ${isMobile ? 'w-full' : ''}`}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
+                >
+                  Annuler
+                </Button>
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
-            {/* Liste des voyages */}
-            {voyages.length > 0 ? (
+        {/* Liste des voyages */}
+        {voyages.length > 0 ? (
               <div className="space-y-4">
-                {voyages.map((voyage) => (
-                  <VoyageCard key={voyage._id} voyage={voyage} />
-                ))}
-              </div>
-            ) : (
+            {voyages.map((voyage) => (
+              <VoyageCard key={voyage._id} voyage={voyage} />
+            ))}
+          </div>
+        ) : (
               <div className="text-center py-12">
                 <div className="bg-gray-50 p-6 rounded-lg mx-auto max-w-md border border-gray-200">
                   <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -1123,8 +1123,8 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                     Créer mon premier voyage
                   </Button>
                 </div>
-              </div>
-            )}
+          </div>
+        )}
           </div>
         ) : (
           /* Section Carte */
@@ -1185,8 +1185,8 @@ const VoyagesSection = ({ currentUser, partenaire, isMobile, toast }: VoyagesSec
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                </div>
+              ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">

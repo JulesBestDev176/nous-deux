@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const chatbotService = require('../services/chatbotService');
-const auth = require('../middlewares/auth');
+const { protegerRoutes } = require('../middlewares/auth');
 
 // Route principale du chatbot
-router.post('/chat', auth, async (req, res) => {
+router.post('/chat', protegerRoutes, async (req, res) => {
   try {
     const { message } = req.body;
-    const userId = req.user.id;
+    const userId = req.utilisateur.id || req.utilisateur._id;
     if (!message || message.trim() === '') {
       return res.status(400).json({ success: false, message: 'Le message ne peut pas être vide' });
     }
@@ -20,9 +20,9 @@ router.post('/chat', auth, async (req, res) => {
 });
 
 // Route pour obtenir l'analyse du couple sans chat
-router.get('/analysis', auth, async (req, res) => {
+router.get('/analysis', protegerRoutes, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.utilisateur.id || req.utilisateur._id;
     const context = await chatbotService.getUserContext(userId);
     const analysis = chatbotService.analyzeCoupleHealth(context);
     res.json({ success: true, analysis });
@@ -33,9 +33,9 @@ router.get('/analysis', auth, async (req, res) => {
 });
 
 // Route pour obtenir des suggestions d'activités
-router.get('/suggestions', auth, async (req, res) => {
+router.get('/suggestions', protegerRoutes, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.utilisateur.id || req.utilisateur._id;
     const context = await chatbotService.getUserContext(userId);
     const suggestions = chatbotService.suggestActivities(context);
     res.json({ success: true, suggestions });

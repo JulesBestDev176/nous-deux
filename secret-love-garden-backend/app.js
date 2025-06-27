@@ -124,6 +124,7 @@ app.use((err, req, res, next) => {
 // Lancement du serveur
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
+  console.log(`Serveur lancé sur le port ${PORT}`);
 });
 
 module.exports = app;
