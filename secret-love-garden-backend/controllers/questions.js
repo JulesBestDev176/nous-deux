@@ -17,13 +17,38 @@ exports.getQuestionDuJour = async (req, res) => {
     });
 
     if (!question) {
-      const questionsRepondues = await Reponse.find({ 
+      // Trouver le partenaire
+      const partenaire = await Utilisateur.findOne({ 
+        _id: { $ne: req.utilisateur.id } 
+      });
+
+      if (!partenaire) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Partenaire non trouvé' 
+        });
+      }
+
+      // Trouver toutes les questions déjà répondues par les deux partenaires
+      const reponsesUtilisateur = await Reponse.find({ 
         utilisateur: req.utilisateur.id 
       }).distinct('question');
+      
+      const reponsesPartenaire = await Reponse.find({ 
+        utilisateur: partenaire._id 
+      }).distinct('question');
+
+      // Questions répondues par les deux partenaires
+      const questionsReponduesParLesDeux = reponsesUtilisateur.filter(qId => 
+        reponsesPartenaire.includes(qId)
+      );
+
+      // Questions répondues par au moins un partenaire
+      const toutesQuestionsRepondues = [...new Set([...reponsesUtilisateur, ...reponsesPartenaire])];
 
       const questionsDisponibles = await Question.aggregate([
         { $match: { 
-          _id: { $nin: questionsRepondues },
+          _id: { $nin: toutesQuestionsRepondues }, // Exclure toutes les questions déjà répondues
           categorie: 'systeme' 
         }},
         { $sample: { size: 1 } }
@@ -37,7 +62,7 @@ exports.getQuestionDuJour = async (req, res) => {
       } else {
         return res.status(404).json({ 
           success: false,
-          message: 'Toutes les questions ont été répondues' 
+          message: 'Toutes les questions ont été répondues par au moins un partenaire' 
         });
       }
     }

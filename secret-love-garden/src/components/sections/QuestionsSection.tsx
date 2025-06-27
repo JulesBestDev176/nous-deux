@@ -44,6 +44,7 @@ interface QuestionAvecReponses {
   question: Question;
   maReponse?: Reponse;
   reponsePartenaire?: Reponse;
+  datePremiereReponse?: string;
 }
 
 const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: QuestionsSectionProps) => {
@@ -160,7 +161,18 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
           (partenaire && (r.utilisateur && (r.utilisateur._id || r.utilisateur)) === partenaire._id) &&
           (String(r.question?._id || r.question) === String(item._id))
         );
-        console.log(`    [Q${idx}] Résultat mapping: maReponse=`, maReponse ? maReponse.texte : 'Aucune', '| reponsePartenaire=', reponsePartenaire ? reponsePartenaire.texte : 'Aucune');
+        
+        // Calculer la date de la première réponse
+        let datePremiereReponse: string | undefined;
+        if (reponsesValides.length > 0) {
+          // Trier les réponses par date et prendre la plus ancienne
+          const reponsesTriees = [...reponsesValides].sort((a, b) => 
+            new Date(a.dateReponse).getTime() - new Date(b.dateReponse).getTime()
+          );
+          datePremiereReponse = reponsesTriees[0].dateReponse;
+        }
+        
+        console.log(`    [Q${idx}] Résultat mapping: maReponse=`, maReponse ? maReponse.texte : 'Aucune', '| reponsePartenaire=', reponsePartenaire ? reponsePartenaire.texte : 'Aucune', '| datePremiereReponse=', datePremiereReponse);
         return {
           question: {
             _id: item._id,
@@ -171,14 +183,16 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
             dateCreation: item.dateCreation,
           },
           maReponse,
-          reponsePartenaire
+          reponsePartenaire,
+          datePremiereReponse
         };
       });
       
       // Trier les questions du plus récent au plus ancien
       questionsOrganisees.sort((a, b) => {
-        const dateA = new Date(a.question.dateCreation);
-        const dateB = new Date(b.question.dateCreation);
+        // Utiliser la date de la première réponse si disponible, sinon la date de création
+        const dateA = a.datePremiereReponse ? new Date(a.datePremiereReponse) : new Date(a.question.dateCreation);
+        const dateB = b.datePremiereReponse ? new Date(b.datePremiereReponse) : new Date(b.question.dateCreation);
         return dateB.getTime() - dateA.getTime();
       });
       
@@ -198,12 +212,14 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
           const questionsSimples = mesReponses.map((reponse: Reponse) => ({
             question: reponse.question!,
             maReponse: reponse,
-            reponsePartenaire: undefined
+            reponsePartenaire: undefined,
+            datePremiereReponse: reponse.dateReponse
           }));
           // Trier aussi les questions du fallback
           questionsSimples.sort((a, b) => {
-            const dateA = new Date(a.question.dateCreation);
-            const dateB = new Date(b.question.dateCreation);
+            // Utiliser la date de la première réponse si disponible, sinon la date de création
+            const dateA = a.datePremiereReponse ? new Date(a.datePremiereReponse) : new Date(a.question.dateCreation);
+            const dateB = b.datePremiereReponse ? new Date(b.datePremiereReponse) : new Date(b.question.dateCreation);
             return dateB.getTime() - dateA.getTime();
           });
           setQuestionsAvecReponses(questionsSimples);
