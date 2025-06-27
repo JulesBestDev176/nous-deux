@@ -393,7 +393,7 @@ const StatistiquesSection = ({ currentUser, partenaire, isMobile, toast }) => {
         )}
 
         {/* Statistiques générales */}
-        <div className={`grid gap-4 mb-8 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+        <div className={`grid gap-4 mb-8 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
           <StatCard
             title="Temps ensemble"
             value={formatDuree(tempsEnsemble.totalHeures || 0)}
@@ -401,14 +401,6 @@ const StatistiquesSection = ({ currentUser, partenaire, isMobile, toast }) => {
             icon={Heart}
             color="red"
             trend={tempsEnsemble.tendance}
-          />
-          <StatCard
-            title="Messages échangés"
-            value={statistiques.totalMessages || 0}
-            subtitle={`${statistiquesMessages.moyenne || 0}/jour en moyenne`}
-            icon={MessageCircle}
-            color="blue"
-            trend={statistiquesMessages.tendance}
           />
           <StatCard
             title="Photos partagées"
@@ -428,15 +420,10 @@ const StatistiquesSection = ({ currentUser, partenaire, isMobile, toast }) => {
         </div>
 
         {/* Graphiques et analyses */}
-        <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1'}`}>
           {/* Graphique humeur */}
           <Card className="p-4 border border-gray-200">
             <HumeurChart humeurs={statistiquesHumeur} />
-          </Card>
-
-          {/* Graphique messages */}
-          <Card className="p-4 border border-gray-200">
-            <MessageChart stats={statistiquesMessages} />
           </Card>
         </div>
 
@@ -497,9 +484,6 @@ const StatistiquesSection = ({ currentUser, partenaire, isMobile, toast }) => {
             Conseils pour votre relation
           </h3>
           <div className="space-y-2 text-sm text-blue-700">
-            {statistiquesMessages.moyenne < 5 && (
-              <p>💬 Vous pourriez échanger plus de messages au quotidien pour maintenir le lien.</p>
-            )}
             {statistiquesHumeur.length > 0 && statistiquesHumeur.slice(0, 3).every(h => h.niveau >= 4) && (
               <p>😊 Excellente période ! Votre humeur est au beau fixe ces derniers temps.</p>
             )}

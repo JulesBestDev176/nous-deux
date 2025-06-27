@@ -15,6 +15,7 @@ interface QuestionsSectionProps {
   isMobile: boolean;
   toast: (options: { title: string; description?: string; variant?: string }) => void;
   onLogout: () => void;
+  removeQuestionsNotification?: () => void;
 }
 
 interface Question {
@@ -47,7 +48,7 @@ interface QuestionAvecReponses {
   datePremiereReponse?: string;
 }
 
-const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: QuestionsSectionProps) => {
+const QuestionsSection = ({ currentUser, partenaire, isMobile, toast, removeQuestionsNotification }: QuestionsSectionProps) => {
   const [questionDuJour, setQuestionDuJour] = useState<Question | null>(null);
   const [reponseUtilisateur, setReponseUtilisateur] = useState<string>("");
   const [questionsAvecReponses, setQuestionsAvecReponses] = useState<QuestionAvecReponses[]>([]);
@@ -262,6 +263,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       setReponseExistante(reponseUtilisateur.trim());
       setReponseUtilisateur("");
       
+      // Supprimer la notification de questions
+      if (removeQuestionsNotification) {
+        removeQuestionsNotification();
+      }
+      
       // Recharger l'historique après un court délai pour laisser le temps au serveur
       setTimeout(() => {
         loadQuestionsAvecReponses();
@@ -306,6 +312,11 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
       // Réinitialiser l'état
       setRepondreQuestionId(null);
       setReponseHistorique("");
+      
+      // Supprimer la notification de questions
+      if (removeQuestionsNotification) {
+        removeQuestionsNotification();
+      }
       
       // Recharger l'historique après un court délai
       setTimeout(() => {
@@ -727,7 +738,7 @@ const QuestionsSection = ({ currentUser, partenaire, isMobile, toast }: Question
                             </span>
                             <div className="flex items-center">
                               <Calendar className="w-3 h-3 mr-1" />
-                              <span>{formatDate(question.dateCreation)}</span>
+                              <span>{questionAvecReponses.datePremiereReponse ? formatDate(questionAvecReponses.datePremiereReponse) : formatDate(question.dateCreation)}</span>
                             </div>
                           </div>
                         </div>

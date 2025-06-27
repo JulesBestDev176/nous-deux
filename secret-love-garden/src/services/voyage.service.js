@@ -11,6 +11,7 @@ const creerVoyage = async (voyageData) => {
     formData.append('titre', voyageData.titre);
     formData.append('destination', voyageData.destination);
     formData.append('description', voyageData.description || '');
+    formData.append('adresse', voyageData.adresse || '');
     formData.append('dateDebut', voyageData.dateDebut);
     formData.append('dateFin', voyageData.dateFin);
     formData.append('coordonnees', JSON.stringify(voyageData.coordonnees || {}));
@@ -56,11 +57,29 @@ const ajouterSouvenir = async (voyageId, souvenirData) => {
     formData.append('description', souvenirData.description || '');
     formData.append('date', souvenirData.date);
     formData.append('lieu', souvenirData.lieu || '');
+    formData.append('adresse', souvenirData.adresse || '');
     
+    // Gérer les images - convertir les URLs en fichiers si nécessaire
     if (souvenirData.images && souvenirData.images.length > 0) {
-      souvenirData.images.forEach((image, index) => {
-        formData.append('images', image);
-      });
+      for (let i = 0; i < souvenirData.images.length; i++) {
+        const image = souvenirData.images[i];
+        
+        // Si c'est déjà un fichier File, l'ajouter directement
+        if (image instanceof File) {
+          formData.append('images', image);
+        } 
+        // Si c'est une URL (string), la convertir en fichier
+        else if (typeof image === 'string' && image.startsWith('blob:')) {
+          try {
+            const response = await fetch(image);
+            const blob = await response.blob();
+            const file = new File([blob], `image_${i}.jpg`, { type: blob.type });
+            formData.append('images', file);
+          } catch (error) {
+            console.error('Erreur conversion image:', error);
+          }
+        }
+      }
     }
     
     const response = await axios.post(`${API_URL}/api/voyage/${voyageId}/souvenir`, formData, {
@@ -80,6 +99,19 @@ const modifierStatutVoyage = async (voyageId, statut) => {
     const token = localStorage.getItem('token');
     const response = await axios.put(`${API_URL}/api/voyage/${voyageId}/statut`, 
       { statut },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+const updateVoyage = async (voyageId, updates) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.put(`${API_URL}/api/voyage/${voyageId}`, 
+      updates,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
@@ -117,6 +149,7 @@ export default {
   getVoyages,
   ajouterSouvenir,
   modifierStatutVoyage,
+  updateVoyage,
   supprimerVoyage,
   getCarteVoyages
 };

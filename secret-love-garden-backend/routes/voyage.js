@@ -35,6 +35,11 @@ router.post(
 // @access  Privé
 router.put('/:voyageId', protegerRoutes, voyageController.modifierVoyage);
 
+// @route   PUT /api/voyage/:voyageId/statut
+// @desc    Modifier le statut d'un voyage
+// @access  Privé
+router.put('/:voyageId/statut', protegerRoutes, voyageController.modifierStatutVoyage);
+
 // @route   DELETE /api/voyage/:voyageId
 // @desc    Supprimer un voyage
 // @access  Privé

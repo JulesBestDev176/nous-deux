@@ -10,6 +10,7 @@ exports.creerVoyage = async (req, res) => {
       titre, 
       destination, 
       description, 
+      adresse,
       dateDebut, 
       dateFin, 
       coordonnees, 
@@ -41,6 +42,7 @@ exports.creerVoyage = async (req, res) => {
       titre,
       destination,
       description,
+      adresse,
       dateDebut: dateDebut ? new Date(dateDebut) : null,
       dateFin: dateFin ? new Date(dateFin) : null,
       coordonnees,
@@ -105,7 +107,7 @@ exports.getVoyages = async (req, res) => {
 exports.ajouterSouvenir = async (req, res) => {
   try {
     const { voyageId } = req.params;
-    const { titre, description, date, lieu } = req.body;
+    const { titre, description, date, lieu, adresse } = req.body;
 
     // Traiter les images si présentes
     let images = [];
@@ -136,6 +138,7 @@ exports.ajouterSouvenir = async (req, res) => {
       description,
       date: date ? new Date(date) : new Date(),
       lieu,
+      adresse,
       images,
       createur: req.utilisateur.id
     };
@@ -192,6 +195,54 @@ exports.modifierVoyage = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la modification du voyage'
+    });
+  }
+};
+
+// Modifier le statut d'un voyage
+exports.modifierStatutVoyage = async (req, res) => {
+  try {
+    const { voyageId } = req.params;
+    const { statut } = req.body;
+
+    // Vérifier que le statut est valide
+    const statutsValides = ['planifie', 'en_cours', 'termine', 'annule'];
+    if (!statutsValides.includes(statut)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Statut invalide'
+      });
+    }
+
+    const voyage = await Voyage.findOneAndUpdate(
+      { 
+        _id: voyageId,
+        $or: [
+          { createur: req.utilisateur.id },
+          { partenaire: req.utilisateur.id }
+        ]
+      },
+      { statut },
+      { new: true }
+    ).populate('createur', 'nom');
+
+    if (!voyage) {
+      return res.status(404).json({
+        success: false,
+        message: 'Voyage non trouvé'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: voyage
+    });
+
+  } catch (error) {
+    console.error('Erreur modification statut voyage:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la modification du statut'
     });
   }
 };

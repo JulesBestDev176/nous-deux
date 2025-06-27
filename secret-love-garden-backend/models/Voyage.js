@@ -10,6 +10,7 @@ const souvenirSchema = new mongoose.Schema({
   description: String,
   date: Date,
   lieu: String,
+  adresse: String,
   images: [{
     url: String,
     legende: String
@@ -36,6 +37,7 @@ const voyageSchema = new mongoose.Schema({
     trim: true
   },
   description: String,
+  adresse: String,
   dateDebut: Date,
   dateFin: Date,
   statut: {

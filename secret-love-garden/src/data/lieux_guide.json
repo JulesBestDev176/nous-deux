@@ -1,0 +1,612 @@
+[
+  {
+    "id": "cantine-ministere-finances",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "Cantine du Ministère des Finances",
+    "type": "cantine locale",
+    "description": "Cantine discrète mais réputée servant le meilleur thiéboudienne de Dakar à prix populaire. Fréquentée par les employés du ministère, cette adresse confidentielle propose des plats généreux dans une ambiance conviviale. Parfait pour découvrir la vraie cuisine sénégalaise en couple sans se ruiner.",
+    "specialites": ["Thiéboudienne", "yassa", "mafé"],
+    "budget": "1500-2000 FCFA par personne",
+    "horaires": "12h-15h du lundi au vendredi",
+    "contact": "Aby au +221 77 615 00 15",
+    "liens": {
+      "maps": "https://maps.google.com/search/ministere+finances+dakar+cantine",
+      "instagram": "https://instagram.com/explore/tags/cantinedakar/"
+    }
+  },
+  {
+    "id": "chez-loutcha",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "Chez Loutcha",
+    "type": "restaurant familial",
+    "description": "Restaurant familial donnant l'impression d'être invité chez une mama sénégalaise. Produits frais, portions généreuses et prix abordables dans une ambiance populaire chaleureuse. L'adresse parfaite pour manger comme un roi à petit budget en couple.",
+    "specialites": ["Cuisine sénégalaise familiale", "thieb", "yassa"],
+    "budget": "3000-5000 FCFA par personne",
+    "horaires": "12h-22h tous les jours",
+    "note": "4,1/5 sur TripAdvisor",
+    "liens": {
+      "maps": "https://maps.google.com/search/chez+loutcha+dakar",
+      "instagram": "https://instagram.com/explore/tags/chezloutcha/"
+    }
+  },
+  {
+    "id": "dibiterie-ouba",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "Dibiterie Ouba",
+    "type": "dibiterie",
+    "description": "Dibiterie avec plus de 10 ans d'expérience, spécialisée dans la viande grillée sénégalaise. Dibi simple à 6000 FCFA et spécialité Ouba à 7000 FCFA. Livraison disponible sur Dakar pour des soirées romantiques à domicile.",
+    "specialites": ["Dibi simple (6000 FCFA)", "Ouba Special (7000 FCFA)"],
+    "budget": "6000-7000 FCFA par personne",
+    "horaires": "18h-minuit",
+    "contact": "+221 77 633 57 57",
+    "liens": {
+      "maps": "https://maps.google.com/search/dibiterie+ouba+dakar",
+      "site": "https://dibiterieouba.com",
+      "instagram": "https://instagram.com/explore/tags/dibiterieouba/"
+    }
+  },
+  {
+    "id": "la-calebasse",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "La Calebasse",
+    "type": "restaurant africain",
+    "description": "Restaurant purement africain sur deux étages, décoré de tableaux ethniques. Spécialisé dans les plats du Sénégal et pays voisins, c'est un véritable bon plan pour découvrir la cuisine africaine à moindre coût. Ambiance Mama Africa garantie.",
+    "specialites": ["Cuisine 100% africaine", "plats traditionnels"],
+    "budget": "5000-7000 FCFA par personne",
+    "horaires": "12h-23h tous les jours",
+    "decor": "Tableaux ethniques, ambiance africaine",
+    "liens": {
+      "maps": "https://maps.google.com/search/la+calebasse+dakar+mamelles",
+      "instagram": "https://instagram.com/explore/tags/lacalebassedakar/"
+    }
+  },
+  {
+    "id": "reine-margarita",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "Reine Margarita",
+    "type": "restaurant italien",
+    "description": "Restaurant italien sur la route de l'aéroport proposant des pizzas authentiques à prix abordables. Tagliatelles, polenta, focaccia... Redécouvrez les saveurs italiennes sans vous ruiner. Cadre sympa pour un date pizza romantique.",
+    "specialites": ["Pizzas", "pâtes italiennes", "desserts"],
+    "budget": "4000-8000 FCFA par personne",
+    "horaires": "11h30-23h",
+    "note": "4,7/5 sur TripAdvisor",
+    "liens": {
+      "maps": "https://maps.google.com/search/reine+margarita+dakar+aeroport",
+      "instagram": "https://instagram.com/explore/tags/reinemargarita/"
+    }
+  },
+  {
+    "id": "ali-baba",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "restaurant",
+    "nom": "Ali Baba",
+    "type": "shawarma et sandwichs orientaux",
+    "description": "Spécialiste des shawarmas et sandwichs orientaux, parfait pour un repas rapide et savoureux en couple. Poulet grillé de qualité dans des pains frais, ambiance décontractée et prix très abordables.",
+    "specialites": ["Shawarma", "sandwichs orientaux"],
+    "budget": "2000-4000 FCFA par personne",
+    "horaires": "11h-23h",
+    "avis": "Humm le poulet !",
+    "liens": {
+      "maps": "https://maps.google.com/search/ali+baba+shawarma+dakar",
+      "instagram": "https://instagram.com/explore/tags/alibabadakar/"
+    }
+  },
+  {
+    "id": "le-special",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Le Special",
+    "type": "franco-chinois",
+    "description": "Restaurant proposant un mélange de cuisine française et chinoise à prix très abordable. Bonne adresse recommandée par les locaux pour manger bien sans dépenser beaucoup. Ambiance décontractée parfaite pour les couples.",
+    "specialites": ["Cuisine française", "cuisine chinoise fusion"],
+    "budget": "40000-70000 GNF par personne",
+    "horaires": "12h-22h",
+    "avis": "Très bien, bonne adresse",
+    "liens": {
+      "maps": "https://maps.google.com/search/le+special+restaurant+conakry",
+      "instagram": "https://instagram.com/explore/tags/lespecialconakry/"
+    }
+  },
+  {
+    "id": "iles-des-joies",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Îles des Joies",
+    "type": "fruits de mer",
+    "description": "Restaurant spécialisé dans les fruits de mer et poissons, offrant une ambiance conviviale et décontractée. Réputé pour la fraîcheur de ses produits et son bon rapport qualité-prix, parfait pour les couples amateurs de cuisine marine.",
+    "specialites": ["Poissons frais", "fruits de mer"],
+    "budget": "50000-90000 GNF par personne",
+    "horaires": "11h30-22h",
+    "fraicheur": "Arrivage quotidien du port",
+    "liens": {
+      "maps": "https://maps.google.com/search/iles+des+joies+conakry",
+      "instagram": "https://instagram.com/explore/tags/ilesdesjoies/"
+    }
+  },
+  {
+    "id": "salmas-diner",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Salma's Diner",
+    "type": "libanais et pizza",
+    "description": "Petit restaurant libanais réputé pour ses pizzas, considérées comme les meilleures de Conakry. Ambiance familiale et prix abordables pour une soirée pizza romantique. Également spécialisé en cuisine libanaise authentique.",
+    "specialites": ["Pizza", "cuisine libanaise"],
+    "budget": "35000-60000 GNF par personne",
+    "horaires": "11h-23h",
+    "liens": {
+      "maps": "https://maps.google.com/search/salmas+diner+conakry",
+      "instagram": "https://instagram.com/explore/tags/salmasdiner/"
+    }
+  },
+  {
+    "id": "la-city-snack",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "La City Snack & Patisserie",
+    "type": "snack et pâtisserie",
+    "description": "Snack et pâtisserie idéal pour les petits-déjeuners en couple ou goûters romantiques. Spécialités américaines et libanaises à prix très doux. Parfait pour commencer une journée de visite à deux.",
+    "specialites": ["Petit-déjeuner", "pâtisseries", "snacks"],
+    "budget": "20000-40000 GNF par personne",
+    "horaires": "7h-20h",
+    "ideal": "Petit-déjeuner, goûter",
+    "liens": {
+      "maps": "https://maps.google.com/search/la+city+snack+patisserie+conakry",
+      "instagram": "https://instagram.com/explore/tags/lacitysnack/"
+    }
+  },
+  {
+    "id": "jardins-de-guinee",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Les Jardins de Guinée",
+    "type": "franco-africain",
+    "description": "Restaurant bien connu des expats, installé sous une grande paillotte verdoyante. Cuisine française et africaine avec des menus très abordables. Soirées grillades le vendredi et spectacles le weekend pour animer vos soirées romantiques.",
+    "specialites": ["Cuisine française", "cuisine africaine", "grillades"],
+    "budget": "60000-100000 GNF par personne",
+    "animation": "Spectacles weekend",
+    "special": "Grillades à volonté vendredi",
+    "liens": {
+      "maps": "https://maps.google.com/search/jardins+de+guinee+conakry",
+      "instagram": "https://instagram.com/explore/tags/jardinsdeguinee/"
+    }
+  },
+  {
+    "id": "chicken-kfj",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Chicken KFJ",
+    "type": "fast-food",
+    "description": "Fast-food installé à l'entrée du restaurant Les Jardins de Guinée, proposant morceaux de poulet frits, burgers et chawarmas. Prix mini et service rapide pour les couples pressés.",
+    "specialites": ["Poulet frit", "burgers", "chawarmas"],
+    "budget": "25000-45000 GNF par personne",
+    "horaires": "11h-23h",
+    "service": "Rapide et efficace",
+    "liens": {
+      "maps": "Entrée des Jardins de Guinée",
+      "instagram": "https://instagram.com/explore/tags/chickenkfj/"
+    }
+  },
+  {
+    "id": "hot-blue",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "restaurant",
+    "nom": "Hot & Blue",
+    "type": "italien et américain",
+    "description": "Restaurant proposant un mélange de cuisine italienne et américaine à prix abordables. Ambiance décontractée pour les jeunes couples cherchant une alternative aux restaurants traditionnels.",
+    "specialites": ["Cuisine italienne", "cuisine américaine fusion"],
+    "budget": "40000-65000 GNF par personne",
+    "horaires": "12h-22h",
+    "public": "Jeunes couples",
+    "liens": {
+      "maps": "https://maps.google.com/search/hot+blue+restaurant+conakry",
+      "instagram": "https://instagram.com/explore/tags/hotblueconakry/"
+    }
+  },
+  {
+    "id": "ile-goree",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "site-touristique",
+    "nom": "Île de Gorée",
+    "type": "patrimoine UNESCO",
+    "description": "L'île de Gorée est un joyau historique classé au patrimoine mondial de l'UNESCO, située à seulement 20 minutes en ferry de Dakar. Ses ruelles pavées, maisons coloniales colorées et ambiance paisible en font le lieu parfait pour une escapade romantique chargée d'histoire.",
+    "activites": ["Balade historique", "Visite Maison des Esclaves", "Coucher de soleil"],
+    "budget": "5000-10000 FCFA (ferry + visite)",
+    "horaires": "Toute la journée",
+    "liens": {
+      "maps": "https://maps.google.com/search/île+de+gorée+dakar",
+      "applemaps": "https://maps.apple.com/?q=Île+de+Gorée+Dakar",
+      "youtube": "https://youtube.com/results?search_query=île+gorée+dakar+visite+romantique",
+      "instagram": "https://instagram.com/explore/tags/iledegoree/",
+      "tiktok": "https://tiktok.com/tag/goreedakar",
+      "site": "https://whc.unesco.org/en/list/26/"
+    }
+  },
+  {
+    "id": "phare-mamelles",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "site-touristique",
+    "nom": "Phare des Mamelles",
+    "type": "phare historique",
+    "description": "Phare emblématique offrant la plus belle vue panoramique sur Dakar et l'océan Atlantique. Spot idéal pour admirer un coucher de soleil romantique à deux.",
+    "activites": ["Vue panoramique", "Coucher de soleil", "Balade"],
+    "budget": "Gratuit",
+    "horaires": "Toute la journée",
+    "liens": {
+      "maps": "https://maps.google.com/search/phare+des+mamelles+dakar",
+      "youtube": "https://youtube.com/results?search_query=phare+mamelles+coucher+soleil+dakar",
+      "instagram": "https://instagram.com/explore/tags/pharemamelles/"
+    }
+  },
+  {
+    "id": "lac-rose",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "site-naturel",
+    "nom": "Lac Rose (Retba)",
+    "type": "lac naturel",
+    "description": "Le Lac Rose est un phénomène naturel unique au monde ! Ses eaux roses créent un paysage de rêve, parfait pour une escapade romantique. Activités : balade à cheval, quad, photos de couple.",
+    "activites": ["Balade à cheval", "Excursion en quad", "Photos"],
+    "budget": "15000-25000 FCFA",
+    "horaires": "Toute la journée",
+    "liens": {
+      "maps": "https://maps.google.com/search/lac+rose+retba+senegal",
+      "youtube": "https://youtube.com/results?search_query=pink+lake+senegal+national+geographic",
+      "instagram": "https://instagram.com/explore/tags/lacrose/"
+    }
+  },
+  {
+    "id": "monument-renaissance",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "site-culturel",
+    "nom": "Monument de la Renaissance Africaine",
+    "type": "monument",
+    "description": "Statue monumentale de 49 mètres de haut dominant Dakar. Vue exceptionnelle sur la capitale, ascenseur panoramique, parfait pour des photos de couple.",
+    "activites": ["Visite culturelle", "Vue panoramique", "Photos"],
+    "budget": "6000 FCFA couple",
+    "horaires": "9h-19h",
+    "liens": {
+      "maps": "https://maps.google.com/search/monument+renaissance+africaine+dakar",
+      "youtube": "https://youtube.com/results?search_query=monument+renaissance+africaine+visite",
+      "instagram": "https://instagram.com/explore/locations/monument-renaissance-africaine/"
+    }
+  },
+  {
+    "id": "plage-ngor",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "plage",
+    "nom": "Plage de N'Gor",
+    "type": "plage",
+    "description": "Plage calme et eaux cristallines, idéale pour une promenade romantique ou un pique-nique à deux. Possibilité de traversée vers l'île de N'Gor.",
+    "activites": ["Baignade", "Pique-nique", "Traversée en pirogue"],
+    "budget": "1000-5000 FCFA",
+    "horaires": "Toute la journée",
+    "liens": {
+      "maps": "https://maps.google.com/search/plage+ngor+dakar",
+      "instagram": "https://instagram.com/explore/tags/yoffbeach/"
+    }
+  },
+  {
+    "id": "village-tortues-rufisque",
+    "pays": "Sénégal",
+    "ville": "Rufisque",
+    "categorie": "site-naturel",
+    "nom": "Village des Tortues",
+    "type": "centre de conservation",
+    "description": "Centre de conservation unique abritant plus de 400 tortues. Promenade dans un cadre verdoyant, découverte de ces fascinants reptiles.",
+    "activites": ["Visite éducative", "Balade nature"],
+    "budget": "2000 FCFA/personne",
+    "horaires": "8h-18h tous les jours",
+    "contact": "+221 33 836 58 23",
+    "liens": {
+      "maps": "https://maps.google.com/search/village+des+tortues+rufisque",
+      "instagram": "https://instagram.com/explore/tags/villagedestortues/"
+    }
+  },
+  {
+    "id": "iles-loos",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "site-naturel",
+    "nom": "Îles de Loos (Kassa, Room, Fotoba)",
+    "type": "archipel",
+    "description": "Archipel paradisiaque à 45 minutes de bateau de Conakry. Plages de sable blanc, eaux cristallines, nature luxuriante. Parfait pour un week-end Robinson Crusoé !",
+    "activites": ["Baignade", "Balade", "Hébergement sur l'île"],
+    "budget": "50000-80000 GNF couple",
+    "horaires": "Toute la journée",
+    "liens": {
+      "maps": "https://maps.google.com/search/iles+de+loos+conakry+guinee",
+      "instagram": "https://instagram.com/explore/tags/ilesdeloos/"
+    }
+  },
+  {
+    "id": "chutes-soumba",
+    "pays": "Guinée",
+    "ville": "Dubréka",
+    "categorie": "site-naturel",
+    "nom": "Chutes de la Soumba",
+    "type": "cascade",
+    "description": "Cascades spectaculaires à 50km de Conakry dans une forêt tropicale préservée. Baignade rafraîchissante, pique-nique sur les rochers, photos de couple dans un décor de rêve.",
+    "activites": ["Baignade", "Randonnée", "Photos"],
+    "budget": "15000-25000 GNF couple",
+    "horaires": "8h-17h",
+    "liens": {
+      "maps": "https://maps.google.com/search/chutes+soumba+dubreka+guinee",
+      "instagram": "https://instagram.com/explore/tags/chutessoumba/"
+    }
+  },
+  {
+    "id": "canalolympia-teranga",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "cinema",
+    "nom": "CanalOlympia Teranga",
+    "type": "cinéma moderne",
+    "description": "Cinéma ultramoderne avec 5 salles climatisées et son Dolby sur la corniche ouest. Programmation variée, fauteuils confortables et vue mer depuis la terrasse.",
+    "budget": "3500-4000 FCFA",
+    "horaires": "15h, 18h, 21h",
+    "liens": {
+      "maps": "https://maps.google.com/search/canalolympia+teranga+dakar",
+      "instagram": "https://instagram.com/explore/tags/canalolympia/"
+    }
+  },
+  {
+    "id": "sea-plaza",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "centre-commercial",
+    "nom": "Sea Plaza",
+    "type": "centre commercial",
+    "description": "Premier centre commercial moderne du Sénégal avec vue imprenable sur l'océan Atlantique. 3 étages de boutiques, restaurants gastronomiques, terrasses face à la mer.",
+    "activites": ["Shopping", "Restaurants", "Terrasse vue mer"],
+    "budget": "Variable",
+    "horaires": "10h-23h tous les jours",
+    "liens": {
+      "maps": "https://maps.google.com/search/sea+plaza+dakar",
+      "site": "https://seaplaza.sn/",
+      "instagram": "https://instagram.com/explore/tags/seaplaza/"
+    }
+  },
+  {
+    "id": "ccfg-conakry",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "centre-culturel",
+    "nom": "Centre Culturel Franco-Guinéen (CCFG)",
+    "type": "centre culturel",
+    "description": "Centre culturel de référence à Conakry proposant une programmation riche : cinéma d'auteur, théâtre, expositions d'art contemporain, concerts et conférences.",
+    "activites": ["Cinéma", "Théâtre", "Expositions", "Concerts"],
+    "budget": "15000-30000 GNF selon événement",
+    "horaires": "9h-21h (fermé dimanche)",
+    "liens": {
+      "maps": "https://maps.google.com/search/centre+culturel+franco+guineen+conakry",
+      "site": "https://ccfg-conakry.org/",
+      "instagram": "https://instagram.com/explore/tags/ccfgconakry/"
+    }
+  },
+  {
+    "id": "magic-land",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "loisir",
+    "nom": "Magic Land (Corniche)",
+    "type": "parc d'attractions",
+    "description": "Parc d'attractions familial avec manèges, jeux, spectacle de clown, grande roue avec vue mer. Parfait pour retrouver votre âme d'enfant à deux et passer un moment ludique et détendu.",
+    "activites": ["Manèges", "Grande roue", "Spectacles", "Jeux d'arcade"],
+    "budget": "À partir de 5000 FCFA/personne",
+    "horaires": "16h-23h (weekend), 17h-22h (semaine)",
+    "liens": {
+      "maps": "https://maps.google.com/search/magic+land+corniche+dakar",
+      "instagram": "https://instagram.com/explore/tags/magiclanddakar/"
+    }
+  },
+  {
+    "id": "parc-hann-zoo",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "parc",
+    "nom": "Parc Hann Zoologique",
+    "type": "zoo et parc",
+    "description": "Plus ancien zoo d'Afrique de l'Ouest, promenade romantique au milieu de 60 hectares de verdure. Lions, hippopotames, crocodiles, singes... Découverte de la faune africaine dans un cadre paisible.",
+    "activites": ["Promenade", "Observation animaux", "Pique-nique"],
+    "budget": "1500 FCFA adulte, 1000 FCFA enfant",
+    "horaires": "9h-18h tous les jours",
+    "liens": {
+      "maps": "https://maps.google.com/search/parc+hann+zoologique+dakar",
+      "instagram": "https://instagram.com/explore/tags/zoodakar/"
+    }
+  },
+  {
+    "id": "dakar-bowling",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "loisir",
+    "nom": "Dakar Bowling (Mermoz)",
+    "type": "bowling",
+    "description": "Bowling moderne avec 12 pistes, ambiance cosy et fun pour un date sportif et décontracté. Bar et snacking sur place.",
+    "activites": ["Bowling", "Bar", "Snacking"],
+    "budget": "3000 FCFA/personne/heure",
+    "horaires": "18h-2h du matin",
+    "liens": {
+      "maps": "https://maps.google.com/search/dakar+bowling+mermoz",
+      "instagram": "https://instagram.com/explore/tags/dakarbowling/"
+    }
+  },
+  {
+    "id": "dream-zone-dakar",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "loisir",
+    "nom": "Dream Zone Dakar",
+    "type": "salle de jeux vidéo et VR",
+    "description": "Centre de divertissement high-tech avec réalité virtuelle, simulateurs de course, jeux d'arcade dernière génération et espaces gaming. Expérience immersive parfaite pour les couples geeks !",
+    "activites": ["VR", "Jeux vidéo", "Simulateurs"],
+    "budget": "À partir de 2500 FCFA/heure",
+    "horaires": "14h-minuit",
+    "liens": {
+      "maps": "https://maps.google.com/search/dream+zone+dakar",
+      "instagram": "https://instagram.com/explore/tags/dreamzonedakar/"
+    }
+  },
+  {
+    "id": "fun-city-sea-plaza",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "loisir",
+    "nom": "Fun City (Sea Plaza)",
+    "type": "centre de loisirs",
+    "description": "Centre de loisirs moderne au cœur du Sea Plaza avec vue sur l'océan. Jeux d'arcade, simulateurs de conduite, mini-cinéma privé et espaces détente.",
+    "activites": ["Jeux d'arcade", "Simulateurs", "Mini-cinéma"],
+    "budget": "Package couple 8000 FCFA (3h)",
+    "horaires": "10h-23h",
+    "liens": {
+      "maps": "https://maps.google.com/search/fun+city+sea+plaza+dakar",
+      "instagram": "https://instagram.com/explore/tags/funcitydakar/"
+    }
+  },
+  {
+    "id": "pain-thon-street",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "street-food",
+    "nom": "Pain-thon et variantes",
+    "type": "street food",
+    "description": "Incontournable de la street food dakaroise, disponible dans toutes les boutiques. Pain-thon, pain-omelette, pain-ndambé... Parfait pour un petit-déjeuner ou collation romantique à deux.",
+    "specialites": ["Pain-thon", "pain-omelette", "pain-vache qui rit"],
+    "budget": "100-200 FCFA par sandwich",
+    "horaires": "Toute la journée",
+    "liens": {
+      "instagram": "https://instagram.com/explore/tags/painthon/"
+    }
+  },
+  {
+    "id": "dibi-haoussa",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "street-food",
+    "nom": "Dibi Haoussa",
+    "type": "brochettes nigériennes",
+    "description": "Brochettes de viande épicée nigérienne vendues dans la rue, parfaites pour une soirée street food romantique. Saveurs authentiques d'Afrique de l'Ouest à prix mini.",
+    "specialites": ["Brochettes de viande épicée"],
+    "budget": "500-1000 FCFA par brochette",
+    "horaires": "18h-minuit",
+    "liens": {
+      "instagram": "https://instagram.com/explore/tags/dibihaoussa/"
+    }
+  },
+  {
+    "id": "village-artisanal-soumbedioune",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "marche",
+    "nom": "Village Artisanal de Soumbédioune",
+    "type": "marché artisanal",
+    "description": "Marché artisanal authentique face à la mer. Sculptures sur bois, bijoux, tissus bogolan, cuir... Découverte de l'artisanat sénégalais dans un cadre pittoresque.",
+    "activites": ["Shopping", "Balade", "Souvenirs"],
+    "budget": "Prix négociables",
+    "horaires": "9h-19h, fermé dimanche",
+    "liens": {
+      "maps": "https://maps.google.com/search/village+artisanal+soumbedioune+dakar",
+      "instagram": "https://instagram.com/explore/tags/soumbedioune/"
+    }
+  },
+  {
+    "id": "cafe-de-rome",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "cafe",
+    "nom": "Café de Rome",
+    "type": "café parisien chic",
+    "description": "Café emblématique de Dakar, ambiance parisienne chic, parfait pour bruncher, papoter ou se détendre à deux.",
+    "specialites": ["Café français", "pâtisseries", "brunch weekend"],
+    "budget": "5000-8000 FCFA par personne",
+    "horaires": "7h-22h",
+    "liens": {
+      "maps": "https://maps.google.com/search/cafe+de+rome+dakar",
+      "instagram": "https://instagram.com/explore/tags/cafederome/"
+    }
+  },
+  {
+    "id": "bazoff",
+    "pays": "Sénégal",
+    "ville": "Dakar",
+    "categorie": "cafe",
+    "nom": "Bazoff",
+    "type": "café terrasse zen",
+    "description": "Café-restaurant avec terrasse verte, musique lounge, ambiance zen pour se détendre en couple.",
+    "budget": "5000-9000 FCFA par personne",
+    "horaires": "8h-23h",
+    "liens": {
+      "maps": "https://maps.google.com/search/restaurant+bazoff+dakar",
+      "instagram": "https://instagram.com/explore/tags/bazoff/"
+    }
+  },
+  {
+    "id": "marche-sandervalia",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "marche",
+    "nom": "Marché Sandervalia",
+    "type": "marché central",
+    "description": "Marché central de Conakry, idéal pour découvrir les produits locaux, épices, tissus, artisanat. Ambiance colorée et vivante.",
+    "activites": ["Shopping", "Découverte produits locaux", "Souvenirs"],
+    "budget": "Prix négociables",
+    "horaires": "8h-18h",
+    "liens": {
+      "maps": "https://maps.google.com/search/marche+sandervalia+conakry"
+    }
+  },
+  {
+    "id": "cafe-paix-conakry",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "cafe",
+    "nom": "Café de la Paix",
+    "type": "café chic",
+    "description": "Café-restaurant élégant au cœur de Conakry, réputé pour son ambiance cosy et son décor raffiné. Cuisine française et internationale, pâtisseries maison et sélection de cafés d'exception.",
+    "specialites": ["Café français", "pâtisseries maison", "brunch"],
+    "budget": "50000-80000 GNF par personne",
+    "horaires": "7h30-22h",
+    "liens": {
+      "maps": "https://maps.google.com/search/cafe+de+la+paix+conakry",
+      "instagram": "https://instagram.com/explore/tags/cafedelapaix/"
+    }
+  },
+  {
+    "id": "maison-jeunes-kipe",
+    "pays": "Guinée",
+    "ville": "Conakry",
+    "categorie": "loisir",
+    "nom": "Maison des Jeunes de Kipé",
+    "type": "centre culturel et loisirs",
+    "description": "Centre culturel dynamique proposant projections de films, spectacles, concerts et expositions. Ambiance conviviale et prix accessibles.",
+    "activites": ["Spectacles", "Cinéma", "Concerts", "Expositions"],
+    "budget": "10000-20000 GNF selon événement",
+    "horaires": "Selon programmation",
+    "liens": {
+      "maps": "https://maps.google.com/search/maison+des+jeunes+kipe+conakry",
+      "instagram": "https://instagram.com/explore/tags/maisondesjeunesKipe/"
+    }
+  }
+] 

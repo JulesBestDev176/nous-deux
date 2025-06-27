@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 // Import des services
 import authService from "@/services/auth.service";
 import userService from "@/services/user.service";
+import questionService from "@/services/questions.service";
 
 // Import des composants de section (seulement ceux demandés)
 import GalerieSection from "./sections/GalerieSection";
@@ -55,6 +56,10 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const [activeSection, setActiveSection] = useState("gallery");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [partenaire, setPartenaire] = useState(null);
+  const [notifications, setNotifications] = useState({
+    questions: 0,
+    customQuestions: 0
+  });
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -71,7 +76,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
     {
       title: "🎯 Objectifs",
       items: [
-        // { id: "custom-questions", label: "Mes questions", icon: Edit }, // Masqué
+        { id: "custom-questions", label: "Mes questions", icon: Edit },
         { id: "objectifs", label: "Objectifs", icon: Target },
         { id: "reminders", label: "Rappels", icon: Bell },
       ]
@@ -98,7 +103,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
   const allMenuItems = [
     { id: "gallery", label: "Galerie d'amour", icon: Camera },
     { id: "questions", label: "Questions couple", icon: MessageCircle },
-    // { id: "custom-questions", label: "Mes questions", icon: Edit }, // Masqué
+    { id: "custom-questions", label: "Mes questions", icon: Edit }, 
     { id: "objectifs", label: "Objectifs", icon: Target },
     { id: "reminders", label: "Rappels", icon: Bell },
     { id: "calendrier", label: "Calendrier", icon: Calendar },
@@ -120,7 +125,35 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
     };
 
     fetchPartenaire();
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      // Récupérer les questions non répondues
+      const questionsResponse = await questionService.getQuestionsAvecReponsesCouple();
+      const questionsNonRepondues = (questionsResponse.data || []).filter(q => {
+        const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
+        const maReponse = q.reponses?.find(r => r.utilisateur?._id === currentUserId);
+        return !maReponse;
+      });
+
+      // Récupérer les questions personnalisées non répondues
+      const customQuestionsResponse = await questionService.getQuestionsPersonnaliseesAvecReponses();
+      const customQuestionsNonRepondues = (customQuestionsResponse.data || []).filter(q => {
+        const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
+        const maReponse = q.reponses?.find(r => r.utilisateur?._id === currentUserId);
+        return !maReponse && q.categorie === 'utilisateur';
+      });
+
+      setNotifications({
+        questions: questionsNonRepondues.length,
+        customQuestions: customQuestionsNonRepondues.length
+      });
+    } catch (error) {
+      console.log("Impossible de charger les notifications");
+    }
+  };
 
   const handleLogoutClick = async () => {
     try {
@@ -130,6 +163,25 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       console.error("Erreur lors de la déconnexion:", error);
       await onLogout();
     }
+  };
+
+  const handleSectionClick = (sectionId: string) => {
+    setActiveSection(sectionId);
+    setShowMobileMenu(false);
+  };
+
+  const decrementCustomQuestionsNotification = () => {
+    setNotifications(prev => ({
+      ...prev,
+      customQuestions: Math.max(0, prev.customQuestions - 1)
+    }));
+  };
+
+  const removeQuestionsNotification = () => {
+    setNotifications(prev => ({
+      ...prev,
+      questions: 0
+    }));
   };
 
   const renderSection = () => {
@@ -155,7 +207,9 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
       partenaire,
       isMobile,
       toast,
-      onLogout
+      onLogout,
+      decrementCustomQuestionsNotification,
+      removeQuestionsNotification
     };
 
     switch (activeSection) {
@@ -296,22 +350,28 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {allMenuItems.map((item) => {
                   const Icon = item.icon;
+                  const notificationCount = item.id === 'questions' ? notifications.questions : 
+                                           item.id === 'custom-questions' ? notifications.customQuestions : 0;
                   return (
                     <Button
                       key={item.id}
                       variant={activeSection === item.id ? "default" : "ghost"}
-                      className={`w-full justify-start p-4 h-auto ${
+                      className={`w-full justify-start p-4 h-auto relative ${
                         activeSection === item.id 
                           ? "bg-pink-500 text-white shadow-md" 
                           : "text-gray-700 hover:bg-pink-50"
                       } rounded-xl`}
                       onClick={() => {
-                        setActiveSection(item.id);
-                        setShowMobileMenu(false);
+                        handleSectionClick(item.id);
                       }}
                     >
                       <Icon className="w-5 h-5 mr-3" />
                       <span className="text-sm font-medium">{item.label}</span>
+                      {notificationCount > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {notificationCount > 9 ? '9+' : notificationCount}
+                        </div>
+                      )}
                     </Button>
                   );
                 })}
@@ -347,19 +407,26 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
                     <div className="space-y-1">
                       {category.items.map((item) => {
                         const Icon = item.icon;
+                        const notificationCount = item.id === 'questions' ? notifications.questions : 
+                                                 item.id === 'custom-questions' ? notifications.customQuestions : 0;
                         return (
                           <Button
                             key={item.id}
                             variant={activeSection === item.id ? "default" : "ghost"}
-                            className={`w-full justify-start p-3 h-auto ${
+                            className={`w-full justify-start p-3 h-auto relative ${
                               activeSection === item.id 
                                 ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md" 
                                 : "text-gray-700 hover:bg-pink-50"
                             } rounded-xl transition-all duration-200`}
-                            onClick={() => setActiveSection(item.id)}
+                            onClick={() => handleSectionClick(item.id)}
                           >
                             <Icon className="w-4 h-4 mr-3" />
                             <span className="text-sm font-medium">{item.label}</span>
+                            {notificationCount > 0 && (
+                              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {notificationCount > 9 ? '9+' : notificationCount}
+                              </div>
+                            )}
                           </Button>
                         );
                       })}
@@ -376,7 +443,7 @@ const Dashboard = ({ currentUser, onLogout }: DashboardProps) => {
                         ? "bg-gray-600 text-white" 
                         : "text-gray-700 hover:bg-gray-50"
                     } rounded-xl`}
-                    onClick={() => setActiveSection("settings")}
+                    onClick={() => handleSectionClick("settings")}
                   >
                     <Settings className="w-4 h-4 mr-3" />
                     <span className="text-sm font-medium">Paramètres</span>

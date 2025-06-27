@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Edit, Plus, Send, CheckCircle, MessageCircle, Loader2, Trash2, Calendar } from "lucide-react";
 import questionService from "@/services/questions.service";
 
-const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobile, onDelete }) => {
+const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobile, onDelete, decrementCustomQuestionsNotification }) => {
   const [reponse, setReponse] = useState("");
   const [reponseExistante, setReponseExistante] = useState(null);
   const [showAnswerField, setShowAnswerField] = useState(false);
@@ -15,7 +15,8 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
   useEffect(() => {
     // Vérifier si une réponse existe déjà
     if (question.reponses && question.reponses.length > 0) {
-      const maReponse = question.reponses.find(r => r.utilisateur?.nom === currentUser);
+      const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
+      const maReponse = question.reponses.find(r => r.utilisateur?._id === currentUserId);
       if (maReponse) {
         setReponseExistante(maReponse);
       }
@@ -35,6 +36,11 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
       setShowAnswerField(false);
       setReponseExistante(res.data || res);
       
+      // Décrémenter la notification de questions personnalisées
+      if (decrementCustomQuestionsNotification) {
+        decrementCustomQuestionsNotification();
+      }
+      
       onReponseSubmit();
     } catch (error) {
       console.error("Erreur lors de la soumission:", error);
@@ -43,7 +49,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
     }
   };
 
-  const isCreator = question.createur?.nom === currentUser;
+  const isCreator = question.createur?._id === (typeof currentUser === 'object' ? currentUser._id : currentUser);
 
   return (
     <div className="bg-white p-3 sm:p-4 rounded-lg border border-pink-200">
@@ -74,9 +80,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
           }`}>
               {isCreator
                 ? 'Votre question'
-                : question.createur.nom !== currentUser
-                  ? 'Question de votre partenaire'
-                  : ''}
+                : 'Question de votre partenaire'}
           </span>
           )}
         </div>
@@ -160,7 +164,10 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
       {question.reponses && question.reponses.length > 0 && reponseExistante && (
         <div className="mt-4 space-y-2">
           {question.reponses
-            .filter(r => r.utilisateur?.nom !== currentUser)
+            .filter(r => {
+              const currentUserId = typeof currentUser === 'object' ? currentUser._id : currentUser;
+              return r.utilisateur?._id !== currentUserId;
+            })
             .filter(r => !(reponseExistante && r.texte === reponseExistante.texte && r.dateReponse === reponseExistante.dateReponse))
             .map((reponsePartenaire, index) => (
               <div key={index} className="bg-purple-50 p-3 rounded-lg border border-purple-200">
@@ -182,7 +189,7 @@ const QuestionPersonnalisee = ({ question, onReponseSubmit, currentUser, isMobil
   );
 };
 
-const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) => {
+const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast, decrementCustomQuestionsNotification }) => {
   const [questionsPersonnalisees, setQuestionsPersonnalisees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -379,6 +386,7 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
                 currentUser={currentUser}
                 isMobile={isMobile}
                 onDelete={handleDeleteQuestion}
+                decrementCustomQuestionsNotification={decrementCustomQuestionsNotification}
               />
             ))}
           </div>
@@ -389,17 +397,6 @@ const CustomQuestionsSection = ({ currentUser, partenaire, isMobile, toast }) =>
             <p className="text-sm mt-2">Commencez par créer votre première question !</p>
           </div>
         )}
-
-        {/* Conseils */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200">
-          <h4 className="font-medium text-pink-800 mb-2">💡 Conseils pour de bonnes questions</h4>
-          <ul className="text-sm text-pink-700 space-y-1">
-            <li>• Posez des questions ouvertes qui encouragent la réflexion</li>
-            <li>• Évitez les questions trop personnelles ou embarrassantes</li>
-            <li>• Pensez aux souvenirs, aux rêves, aux préférences</li>
-            <li>• Soyez créatifs et amusez-vous !</li>
-          </ul>
-        </div>
       </CardContent>
     </Card>
   );

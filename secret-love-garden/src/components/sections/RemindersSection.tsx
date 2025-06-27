@@ -503,17 +503,6 @@ const RemindersSection = ({ currentUser, partenaire, isMobile, toast }) => {
             </p>
           </div>
         )}
-
-        {/* Conseils */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-800 mb-2">💡 Conseils pour bien organiser vos rappels</h4>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Utilisez des titres clairs et précis</li>
-            <li>• Définissez des priorités pour mieux vous organiser</li>
-            <li>• Ajoutez une date pour les échéances importantes</li>
-            <li>• N'hésitez pas à partager avec votre partenaire</li>
-          </ul>
-        </div>
       </CardContent>
     </Card>
   );
