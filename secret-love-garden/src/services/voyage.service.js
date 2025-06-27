@@ -3,6 +3,8 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const creerVoyage = async (voyageData) => {
+  const url = `${API_URL}/api/voyage/creer`;
+  console.log('[API] Appel à :', url);
   try {
     const token = localStorage.getItem('token');
     const formData = new FormData();
@@ -24,7 +26,7 @@ const creerVoyage = async (voyageData) => {
       });
     }
     
-    const response = await axios.post(`${API_URL}/api/voyage/creer`, formData, {
+    const response = await axios.post(url, formData, {
       headers: { 
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data'
@@ -32,18 +34,22 @@ const creerVoyage = async (voyageData) => {
     });
     return response.data;
   } catch (error) {
+    console.error('[API] Erreur lors de l’appel à', url, error);
     throw error.response.data;
   }
 };
 
 const getVoyages = async () => {
+  const url = `${API_URL}/api/voyage`;
+  console.log('[API] Appel à :', url);
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/api/voyage`, {
+    const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
   } catch (error) {
+    console.error('[API] Erreur lors de l’appel à', url, error);
     throw error.response.data;
   }
 };
